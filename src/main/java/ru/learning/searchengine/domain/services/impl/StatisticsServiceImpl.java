@@ -29,9 +29,9 @@ public class StatisticsServiceImpl implements StatisticsService {
 //        total.setIndexing(true);
 //
 //        List<DetailedStatisticsItemModel> detailed = new ArrayList<>();
-//        List<Site> sitesList = sites.getSites();
+//        List<SiteEntity> sitesList = sites.getSites();
 //        for(int i = 0; i < sitesList.size(); i++) {
-//            Site site = sitesList.get(i);
+//            SiteEntity site = sitesList.get(i);
 //            DetailedStatisticsItemModel item = new DetailedStatisticsItemModel();
 //            item.setName(site.getName());
 //            item.setUrl(site.getUrl());
