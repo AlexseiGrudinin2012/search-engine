@@ -8,7 +8,7 @@ import ru.learning.searchengine.domain.dto.statistics.DetailedStatisticsItemDto;
 import ru.learning.searchengine.domain.dto.statistics.StatisticsDataDto;
 import ru.learning.searchengine.domain.dto.statistics.StatisticsDto;
 import ru.learning.searchengine.domain.dto.statistics.TotalStatisticsDto;
-import ru.learning.searchengine.domain.exceptions.SiteNotFoundException;
+import ru.learning.searchengine.infrastructure.exceptions.SiteNotFoundException;
 import ru.learning.searchengine.domain.services.LemmaService;
 import ru.learning.searchengine.domain.services.PageService;
 import ru.learning.searchengine.domain.services.SiteService;
