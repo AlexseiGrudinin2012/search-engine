@@ -1623,10 +1623,11 @@ var API = function(){
                                 time.getSeconds() +
                                 '</div><div class="Statistics-option"><strong>Pages:</strong> ' + site.pages +
                                 '</div><div class="Statistics-option"><strong>Lemmas:</strong> ' + site.lemmas +
-                                '</div><div class="Statistics-option Statistics-option_error"><strong>Error:</strong> ' + site.error + '</div>'+
-                                '')
-    
-                        
+                                '</div>' +
+                                // Проверить, не пустое ли поле site.error и не равно ли оно 'null'
+                                (site.error !== null && site.error.trim() !== "" ? '<div class="Statistics-option Statistics-option_error"><strong>Error:</strong> ' + site.error + '</div>' : '') +
+                                '');
+
                         $statistics.append($blockSiteExample);
                         var $thisHideBlock = $statistics.find('.HideBlock').last();
                         $thisHideBlock.on('click', HideBlock().trigger);

@@ -9,7 +9,9 @@ import org.springframework.validation.BindException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.HandlerMethod;
-import ru.learning.searchengine.domain.exceptions.StatisticsNotFoundException;
+import ru.learning.searchengine.domain.dto.ErrorDetailsDto;
+import ru.learning.searchengine.domain.exceptions.SiteNotFoundException;
+import ru.learning.searchengine.infrastructure.mappers.ErrorDetailsMapper;
 import ru.learning.searchengine.presentation.models.handlers.ErrorDetailsResponseModel;
 
 @Component
@@ -23,15 +25,17 @@ public class ControllersExceptionHandler {
                 .setCause(e)
                 .addKeyValue("@invalidModel", e.getTarget())
                 .log("Ошибка валидации значений во время обращения к контроллеру");
-        return new ResponseEntity<>(new ErrorDetailsResponseModel(e, handlerMethod), HttpStatus.BAD_REQUEST);
+        HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
+        return new ResponseEntity<>(this.getErrorDetailsModel(e, httpStatus, handlerMethod), httpStatus);
     }
 
-    @ExceptionHandler(StatisticsNotFoundException.class)
-    public ResponseEntity<ErrorDetailsResponseModel> statisticsNotFoundException(StatisticsNotFoundException e, HandlerMethod handlerMethod) {
+    @ExceptionHandler(SiteNotFoundException.class)
+    public ResponseEntity<ErrorDetailsResponseModel> siteNotFoundException(SiteNotFoundException e, HandlerMethod handlerMethod) {
         logger.atError()
                 .setCause(e)
-                .log("Ошибка валидации значений во время обращения к контроллеру");
-        return new ResponseEntity<>(new ErrorDetailsResponseModel(e, handlerMethod), HttpStatus.BAD_REQUEST);
+                .log("Список сайтов для индексации пуст");
+        HttpStatus httpStatus = HttpStatus.NOT_FOUND;
+        return new ResponseEntity<>(this.getErrorDetailsModel(e, httpStatus, handlerMethod), httpStatus);
     }
 
     @ExceptionHandler(Exception.class)
@@ -39,6 +43,12 @@ public class ControllersExceptionHandler {
         logger.atError()
                 .setCause(e)
                 .log("Неизвестная ошибка во время обращения к контроллеру");
-        return new ResponseEntity<>(new ErrorDetailsResponseModel(e, handlerMethod), HttpStatus.INTERNAL_SERVER_ERROR);
+        HttpStatus httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
+        return new ResponseEntity<>(this.getErrorDetailsModel(e, httpStatus, handlerMethod), httpStatus);
+    }
+
+    private ErrorDetailsResponseModel getErrorDetailsModel(Throwable throwable, HttpStatus status, HandlerMethod handlerMethod) {
+        ErrorDetailsDto errorDetailsDto = new ErrorDetailsDto(throwable, status, handlerMethod);
+        return ErrorDetailsMapper.INSTANCE.dtoToResponseModel(errorDetailsDto);
     }
 }
