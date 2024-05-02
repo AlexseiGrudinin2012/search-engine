@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.method.HandlerMethod;
 import ru.learning.searchengine.domain.dto.ErrorDetailsDto;
-import ru.learning.searchengine.domain.exceptions.SiteNotFoundException;
+import ru.learning.searchengine.infrastructure.exceptions.SiteNotFoundException;
 import ru.learning.searchengine.infrastructure.mappers.ErrorDetailsMapper;
 import ru.learning.searchengine.presentation.models.handlers.ErrorDetailsResponseModel;
 
