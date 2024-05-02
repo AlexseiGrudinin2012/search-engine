@@ -14,7 +14,7 @@ import lombok.Data;
 @Entity
 @Table(name = "index")
 @Data
-public class IndexEntity {
+public class IndexItemEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "index_id_seq")

@@ -5,5 +5,5 @@ import ru.learning.searchengine.persistance.entities.PageEntity;
 
 
 public interface PageRepository extends JpaRepository<PageEntity, Long> {
-
+        Long countBySiteId(Long siteId);
 }

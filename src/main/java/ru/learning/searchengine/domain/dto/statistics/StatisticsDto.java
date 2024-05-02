@@ -1,9 +1,11 @@
 package ru.learning.searchengine.domain.dto.statistics;
 
+import lombok.Builder;
 import lombok.Data;
 
 @Data
-public class StatisticsResponseDto {
+@Builder
+public class StatisticsDto {
     private boolean result;
     private StatisticsDataDto statistics;
 }
