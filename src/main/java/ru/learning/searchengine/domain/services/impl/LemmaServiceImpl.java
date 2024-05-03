@@ -1,21 +1,16 @@
 package ru.learning.searchengine.domain.services.impl;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.learning.searchengine.domain.dto.SiteDto;
 import ru.learning.searchengine.domain.services.LemmaService;
 import ru.learning.searchengine.persistance.repositories.LemmaRepository;
 
 @Service
+@RequiredArgsConstructor
 public class LemmaServiceImpl implements LemmaService {
 
-
     private final LemmaRepository lemmaRepository;
-
-    @Autowired
-    public LemmaServiceImpl(LemmaRepository lemmaRepository) {
-        this.lemmaRepository = lemmaRepository;
-    }
 
     @Override
     public Long getLemmaCount(SiteDto siteDto) {

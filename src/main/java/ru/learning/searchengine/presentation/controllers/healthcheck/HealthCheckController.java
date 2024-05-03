@@ -1,5 +1,6 @@
 package ru.learning.searchengine.presentation.controllers.healthcheck;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -10,12 +11,9 @@ import ru.learning.searchengine.presentation.models.healthcheck.HealthCheckRespo
 
 @RestController()
 @RequestMapping("/api/hc")
+@RequiredArgsConstructor
 public class HealthCheckController {
     private final HealthCheckService healthCheckService;
-
-    public HealthCheckController(HealthCheckService healthCheckService) {
-        this.healthCheckService = healthCheckService;
-    }
 
     @GetMapping()
     public HealthCheckResponseModel getHealthCheck() {
