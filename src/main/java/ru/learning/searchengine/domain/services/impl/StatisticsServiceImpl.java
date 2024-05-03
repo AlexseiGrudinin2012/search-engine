@@ -1,6 +1,6 @@
 package ru.learning.searchengine.domain.services.impl;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import ru.learning.searchengine.domain.dto.SiteDto;
@@ -8,15 +8,16 @@ import ru.learning.searchengine.domain.dto.statistics.DetailedStatisticsItemDto;
 import ru.learning.searchengine.domain.dto.statistics.StatisticsDataDto;
 import ru.learning.searchengine.domain.dto.statistics.StatisticsDto;
 import ru.learning.searchengine.domain.dto.statistics.TotalStatisticsDto;
-import ru.learning.searchengine.infrastructure.exceptions.SiteNotFoundException;
 import ru.learning.searchengine.domain.services.LemmaService;
 import ru.learning.searchengine.domain.services.PageService;
 import ru.learning.searchengine.domain.services.SiteService;
 import ru.learning.searchengine.domain.services.StatisticsService;
+import ru.learning.searchengine.infrastructure.exceptions.SiteNotFoundException;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class StatisticsServiceImpl implements StatisticsService {
 
     private final SiteService siteService;
@@ -24,13 +25,6 @@ public class StatisticsServiceImpl implements StatisticsService {
     private final PageService pageService;
 
     private final LemmaService lemmaService;
-
-    @Autowired
-    public StatisticsServiceImpl(SiteService siteService, PageService pageService, LemmaService lemmaService) {
-        this.siteService = siteService;
-        this.pageService = pageService;
-        this.lemmaService = lemmaService;
-    }
 
     @Override
     public StatisticsDto getStatistics() {
@@ -59,8 +53,8 @@ public class StatisticsServiceImpl implements StatisticsService {
     }
 
     private TotalStatisticsDto getTotalStatisticsDto(List<DetailedStatisticsItemDto> detailedStatisticsItemDtos) {
-        //Можем делать запросы по сайтам на запрос страниц и лемм, но так как уже всё вычислили,
-        // то лучше взять из detailedStatisticsItem и высчитать значения
+        //Можем делать запросы по сайтам на запрос страниц и лемм, но так как уже всё запросили,
+        //то лучше взять из detailedStatisticsItem и высчитать сумму уже запрошенного количества страниц и лемм
         return TotalStatisticsDto
                 .builder()
                 .sites(detailedStatisticsItemDtos.size())

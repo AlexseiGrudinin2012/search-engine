@@ -1,5 +1,6 @@
 package ru.learning.searchengine.presentation.controllers.statistics;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -9,14 +10,11 @@ import ru.learning.searchengine.infrastructure.mappers.StatisticsMapper;
 import ru.learning.searchengine.presentation.models.statistics.StatisticsResponseModel;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/statistics")
 public class StatisticsController {
 
     private final StatisticsService statisticsService;
-
-    public StatisticsController(StatisticsService statisticsService) {
-        this.statisticsService = statisticsService;
-    }
 
     /**
      * Метод возвращает информацию о статистике запросов к сайтам
