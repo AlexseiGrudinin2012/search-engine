@@ -6,9 +6,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.learning.searchengine.domain.dto.SiteDto;
 import ru.learning.searchengine.domain.enums.SiteStatus;
+import ru.learning.searchengine.domain.services.IndexingParsingService;
 import ru.learning.searchengine.domain.services.IndexingService;
-import ru.learning.searchengine.domain.services.PageService;
-import ru.learning.searchengine.domain.services.SiteService;
 import ru.learning.searchengine.infrastructure.config.JsoupConfig;
 import ru.learning.searchengine.infrastructure.multithreadswrappers.ForkJoinPoolWrapper;
 
@@ -23,11 +22,9 @@ public class IndexingServiceImpl implements IndexingService {
 
     private final JsoupConfig jsoupConfig;
 
-    private final PageService pageService;
+    private final IndexingParsingService indexingParsingService;
 
-    private final SiteService siteService;
-
-    private ForkJoinPoolWrapper<Void> forkJoinPoolWrapper;
+    private ForkJoinPoolWrapper<Boolean> forkJoinPoolWrapper;
 
     private ExecutorService executorService;
 
@@ -39,16 +36,26 @@ public class IndexingServiceImpl implements IndexingService {
         //TODO, самому не нравится
         this.isStarted = true;
         this.executorService = Executors.newSingleThreadExecutor();
-        this.siteService
-                .getSiteListByStatuses(SiteStatus.getNonIndexedStatuses())
+        this.indexingParsingService.getNonIndexingSites()
                 .forEach(siteDto -> this.executorService.submit(() -> this.startParsePagesTask(siteDto)));
         log.info("Задание на индексацию отправлено на выполнение");
     }
 
     private void startParsePagesTask(SiteDto siteDto) {
-        try (ForkJoinPoolWrapper<Void> forkJoinPoolWrapper = new ForkJoinPoolWrapper<>()) {
+        try (ForkJoinPoolWrapper<Boolean> forkJoinPoolWrapper = new ForkJoinPoolWrapper<>()) {
             this.forkJoinPoolWrapper = forkJoinPoolWrapper;
-            forkJoinPoolWrapper.invoke(new IndexingPageTask(siteDto, this.jsoupConfig.getConnection(), this.pageService));
+            Boolean isComplete = forkJoinPoolWrapper.invokeAndGet(
+                    new IndexingPageTask(
+                            siteDto,
+                            this.jsoupConfig.getConnection(),
+                            this.indexingParsingService)
+            );
+            SiteStatus status = isComplete != null && isComplete ? SiteStatus.INDEXED : SiteStatus.FAILED;
+            if (SiteStatus.INDEXED.equals(status)) {
+                siteDto.setLastError(null);
+            }
+            siteDto.setStatus(status);
+            this.indexingParsingService.saveAllBySite(siteDto);
         }
     }
 
