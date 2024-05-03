@@ -6,34 +6,43 @@ import org.jsoup.Connection;
 import org.springframework.util.CollectionUtils;
 import ru.learning.searchengine.domain.dto.PageDto;
 import ru.learning.searchengine.domain.dto.SiteDto;
-import ru.learning.searchengine.domain.services.PageService;
+import ru.learning.searchengine.domain.enums.SiteStatus;
+import ru.learning.searchengine.domain.services.IndexingParsingService;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.RecursiveAction;
+import java.util.concurrent.RecursiveTask;
 import java.util.stream.Collectors;
 
 @Slf4j
-public class IndexingPageTask extends RecursiveAction {
+public class IndexingPageTask extends RecursiveTask<Boolean> {
 
     private final Set<String> linkStorage;
     private final String currentPagePath;
     private final SiteDto siteDto;
     private static Connection jsoupConnection;
     private static final String RESPONSE_CONTENT_TYPE = "text/html";
-    private static PageService service;
-    private static int total = 0;
 
-    public IndexingPageTask(SiteDto siteDto, Connection connection, PageService pageService) {
+    private static IndexingParsingService indexingParsingService;
+
+    public IndexingPageTask(
+            SiteDto siteDto,
+            Connection connection,
+            IndexingParsingService indexingParsingService
+    ) {
         this(siteDto, null, ConcurrentHashMap.newKeySet());
         jsoupConnection = connection;
-        service = pageService;
-        total = 0;
+        IndexingPageTask.indexingParsingService = indexingParsingService;
     }
 
-    private IndexingPageTask(SiteDto siteDto, String currentPagePath, Set<String> linkStorage) {
+    private IndexingPageTask(
+            SiteDto siteDto,
+            String currentPagePath,
+            Set<String> linkStorage
+    ) {
         this.siteDto = siteDto;
         this.currentPagePath = currentPagePath;
         this.linkStorage = linkStorage;
@@ -48,19 +57,21 @@ public class IndexingPageTask extends RecursiveAction {
     }
 
     @Override
-    protected void compute() {
+    protected Boolean compute() {
         String currentLink = StringUtils.isEmpty(this.currentPagePath) ?
                 this.siteDto.getUrl() :
                 this.currentPagePath;
 
         Set<PageDto> children = this.getChildren(currentLink);
         if (CollectionUtils.isEmpty(children)) {
-            return;
+            return null;
         }
 
-        service.saveAllBySite(siteDto.getId(), children);
-        total += children.size();
-        System.out.printf("Current size: %s, total: %s, ActiveThreads: %s;%n", children.size(), total, Thread.activeCount());
+        if (SiteStatus.FAILED.equals(siteDto.getStatus())) {
+            this.siteDto.setStatus(SiteStatus.INDEXING);
+        }
+        this.siteDto.setStatusTime(new Date());
+        IndexingPageTask.indexingParsingService.saveAllBySite(this.siteDto, children);
 
         List<IndexingPageTask> newTasks = children
                 .stream()
@@ -69,6 +80,7 @@ public class IndexingPageTask extends RecursiveAction {
                 .toList();
 
         newTasks.forEach(IndexingPageTask::join);
+        return true;
     }
 
 
@@ -108,11 +120,15 @@ public class IndexingPageTask extends RecursiveAction {
                     .collect(Collectors.toSet());
 
         } catch (Exception e) {
+            String errorMessage = String.format("Ошибка во время парсинга страницы: %s", e.getMessage());
             log.atError()
                     .setCause(e)
                     .addKeyValue("siteUrl", this.siteDto.getUrl())
                     .addKeyValue("currentLink", link)
-                    .log("Произошла ошибка во время парсинга страниц сайта");
+                    .log(errorMessage);
+            this.siteDto.setStatus(SiteStatus.FAILED);
+            this.siteDto.setLastError(errorMessage);
+            IndexingPageTask.indexingParsingService.saveAllBySite(this.siteDto);
             return Collections.emptySet();
         }
     }

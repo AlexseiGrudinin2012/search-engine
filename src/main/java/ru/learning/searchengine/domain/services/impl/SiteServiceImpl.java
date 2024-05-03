@@ -37,4 +37,12 @@ public class SiteServiceImpl implements SiteService {
         }
         return siteEntityList.stream().map(SiteMapper.INSTANCE::entityToDto).toList();
     }
+
+    @Override
+    public void save(SiteDto siteDto) {
+        this.siteRepository.findById(siteDto.getId()).ifPresent(
+                siteEntity ->
+                        this.siteRepository.save(SiteMapper.INSTANCE.updateEntity(siteDto, siteEntity))
+        );
+    }
 }

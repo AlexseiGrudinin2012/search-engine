@@ -10,4 +10,6 @@ public interface SiteService {
     List<SiteDto> getSiteList();
 
     List<SiteDto> getSiteListByStatuses(List<SiteStatus> siteStatuses);
+
+    void save(SiteDto siteDto);
 }
