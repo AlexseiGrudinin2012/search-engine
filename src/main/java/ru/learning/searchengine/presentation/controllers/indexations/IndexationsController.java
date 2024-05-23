@@ -16,6 +16,18 @@ public class IndexationsController {
 
     @GetMapping("/startIndexing")
     public ResponseEntity<StatusResponseModel> startIndexation() {
+        if (indexingService.isAllSitesIndexed()) {
+            return ResponseEntity
+                    .badRequest() //С одной стороны можно вернуть 200, но мы же не запустили индексацию по факту
+                    .body(
+                            StatusResponseModel
+                                    .builder()
+                                    .error("Все сайты уже проиндексированы!")
+                                    .result(false)
+                                    .build()
+                    );
+        }
+
         if (this.indexingService.isStarted()) {
             return ResponseEntity.badRequest().body(
                     StatusResponseModel

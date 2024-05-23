@@ -6,4 +6,6 @@ public interface IndexingService {
     void stop();
 
     boolean isStarted();
+
+    boolean isAllSitesIndexed();
 }
