@@ -1,11 +1,20 @@
 package ru.learning.searchengine.domain.services;
 
+import ru.learning.searchengine.domain.dto.PageDto;
+import ru.learning.searchengine.domain.dto.SiteDto;
+
+import java.util.Set;
+
 public interface IndexingService {
-    void start();
+    void startIndexation();
 
-    void stop();
+    void stopIndexation();
 
-    boolean isStarted();
+    boolean isIndexationStarted();
 
-    boolean isAllSitesIndexed();
+    void save(SiteDto siteDto, Throwable throwable, Set<PageDto> pageDtoSet);
+
+    void updateStatus(SiteDto siteDto, Throwable throwable);
+
+    void saveSiteStatusIndexed(SiteDto siteDto);
 }

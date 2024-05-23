@@ -6,7 +6,7 @@ import org.jsoup.Connection;
 import org.springframework.util.CollectionUtils;
 import ru.learning.searchengine.domain.dto.PageDto;
 import ru.learning.searchengine.domain.dto.SiteDto;
-import ru.learning.searchengine.domain.services.WebAnalyzerService;
+import ru.learning.searchengine.domain.services.IndexingService;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -32,11 +32,11 @@ class RecursiveWebAnalyzerTask extends RecursiveAction {
     //Ну, думаю тут static не помешает ...конфиг не будет меняться динамически без перезапуска
     private static Connection connection;
     //Плохой подход ... но за отсутствием альтернатив решения без fork-join-pool...
-    private static WebAnalyzerService service;
+    private static IndexingService service;
 
 
     //Для создания из-вне
-    public RecursiveWebAnalyzerTask(SiteDto siteDto, Connection connection, WebAnalyzerService service) {
+    public RecursiveWebAnalyzerTask(SiteDto siteDto, Connection connection, IndexingService service) {
         this(siteDto, null, ConcurrentHashMap.newKeySet());
         RecursiveWebAnalyzerTask.connection = connection;
         RecursiveWebAnalyzerTask.service = service;
@@ -59,7 +59,7 @@ class RecursiveWebAnalyzerTask extends RecursiveAction {
                     ? this.siteDto.getUrl()
                     : this.currentLink;
 
-            if (RecursiveWebAnalyzerTask.service.isStopped()) {
+            if (!RecursiveWebAnalyzerTask.service.isIndexationStarted()) {
                 return;
             }
 
@@ -67,6 +67,8 @@ class RecursiveWebAnalyzerTask extends RecursiveAction {
             if (CollectionUtils.isEmpty(children)) {
                 RecursiveWebAnalyzerTask.service.updateStatus(this.siteDto, null);
                 return;
+            } else {
+                RecursiveWebAnalyzerTask.service.save(this.siteDto, null, children);
             }
 
             List<RecursiveWebAnalyzerTask> newTasks = children
@@ -76,7 +78,7 @@ class RecursiveWebAnalyzerTask extends RecursiveAction {
                     .toList();
 
             newTasks.forEach(ForkJoinTask::join);
-            if (RecursiveWebAnalyzerTask.service.isStopped()) {
+            if (RecursiveWebAnalyzerTask.service.isIndexationStarted()) {
                 return;
             }
             RecursiveWebAnalyzerTask.service.saveSiteStatusIndexed(this.siteDto);

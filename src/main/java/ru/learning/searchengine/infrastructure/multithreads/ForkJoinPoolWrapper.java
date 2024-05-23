@@ -1,4 +1,4 @@
-package ru.learning.searchengine.infrastructure.multithreadswrappers;
+package ru.learning.searchengine.infrastructure.multithreads;
 
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;

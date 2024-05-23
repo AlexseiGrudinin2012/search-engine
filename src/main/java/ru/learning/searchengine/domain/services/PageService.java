@@ -9,4 +9,6 @@ public interface PageService {
         Long getPagesCount(SiteDto siteDto);
 
         void saveAllBySite(Long siteId, Set<PageDto> fetchedPages);
+
+        void deleteAllBySite(SiteDto siteDto);
 }
