@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.learning.searchengine.domain.services.StatisticsService;
-import ru.learning.searchengine.infrastructure.mappers.StatisticsMapper;
 import ru.learning.searchengine.presentation.models.statistics.StatisticsResponseModel;
 
 @RestController
@@ -24,8 +23,6 @@ public class StatisticsController {
      */
     @GetMapping
     public ResponseEntity<StatisticsResponseModel> statistics() {
-        return ResponseEntity.ok(
-                StatisticsMapper.INSTANCE.dtoToModel(this.statisticsService.getStatistics())
-        );
+        return ResponseEntity.ok(this.statisticsService.getStatistics());
     }
 }

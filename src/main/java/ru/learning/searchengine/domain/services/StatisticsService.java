@@ -1,8 +1,8 @@
 package ru.learning.searchengine.domain.services;
 
-import ru.learning.searchengine.domain.dto.statistics.StatisticsDto;
+import ru.learning.searchengine.presentation.models.statistics.StatisticsResponseModel;
 
 
 public interface StatisticsService {
-    StatisticsDto getStatistics();
+    StatisticsResponseModel getStatistics();
 }

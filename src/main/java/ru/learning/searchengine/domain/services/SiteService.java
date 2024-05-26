@@ -12,4 +12,6 @@ public interface SiteService {
     List<SiteDto> getSiteListByStatuses(List<SiteStatus> siteStatuses);
 
     void save(SiteDto siteDto);
+
+    boolean isAllSitesIndexed();
 }
