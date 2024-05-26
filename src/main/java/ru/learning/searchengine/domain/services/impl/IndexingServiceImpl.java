@@ -89,9 +89,6 @@ public class IndexingServiceImpl implements IndexingService {
 
     public void startParsePagesTask(SiteDto siteDto) {
         this.updateSiteStatus(siteDto, SiteStatus.INDEXING);
-        //TODO сделать в потоке ?
-        this.pageService.deleteAllBySite(siteDto);
-
         try (ForkJoinPoolWrapper<Void> forkJoinPoolWrapper = new ForkJoinPoolWrapper<>()) {
             //TODO возможно я где-то не прав ...
             this.taskPool.add(forkJoinPoolWrapper);
@@ -105,6 +102,7 @@ public class IndexingServiceImpl implements IndexingService {
 
     @Override
     public void startIndexation() {
+        this.pageService.truncatePages();
         this.isStopped.set(false);
         this.siteService.getSiteList()
                 .forEach(siteDto -> this.executor.runNewTask(() -> this.startParsePagesTask(siteDto)));

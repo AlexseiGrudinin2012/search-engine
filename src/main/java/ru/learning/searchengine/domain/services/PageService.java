@@ -6,9 +6,9 @@ import ru.learning.searchengine.domain.dto.SiteDto;
 import java.util.Set;
 
 public interface PageService {
-        Long getPagesCount(SiteDto siteDto);
+    Long getPagesCount(SiteDto siteDto);
 
-        void saveAllBySite(Long siteId, Set<PageDto> fetchedPages);
+    void saveAllBySite(Long siteId, Set<PageDto> fetchedPages);
 
-        void deleteAllBySite(SiteDto siteDto);
+    void truncatePages();
 }

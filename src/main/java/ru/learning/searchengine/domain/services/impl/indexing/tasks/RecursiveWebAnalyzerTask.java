@@ -78,7 +78,7 @@ class RecursiveWebAnalyzerTask extends RecursiveAction {
                     .toList();
 
             newTasks.forEach(ForkJoinTask::join);
-            if (RecursiveWebAnalyzerTask.service.isIndexationStarted()) {
+            if (!RecursiveWebAnalyzerTask.service.isIndexationStarted()) {
                 return;
             }
             RecursiveWebAnalyzerTask.service.saveSiteStatusIndexed(this.siteDto);

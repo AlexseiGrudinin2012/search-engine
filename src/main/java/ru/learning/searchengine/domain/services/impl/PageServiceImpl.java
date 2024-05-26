@@ -66,12 +66,9 @@ public class PageServiceImpl implements PageService {
         return PageMapper.INSTANCE.updateEntity(fetchedPageDto, persistedPageEntity.get());
     }
 
+
     @Override
-    @Transactional
-    public void deleteAllBySite(SiteDto siteDto) {
-        if (siteDto == null || siteDto.getId() == null) {
-            return;
-        }
-        this.pageRepository.deleteAllBySiteId(siteDto.getId());
+    public void truncatePages() {
+        this.pageRepository.truncatePages();
     }
 }
