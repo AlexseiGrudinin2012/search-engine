@@ -16,19 +16,7 @@ public class IndexationsController {
 
     @GetMapping("/startIndexing")
     public ResponseEntity<StatusResponseModel> startIndexation() {
-        if (indexingService.isAllSitesIndexed()) {
-            return ResponseEntity
-                    .badRequest() //С одной стороны можно вернуть 200, но мы же не запустили индексацию по факту
-                    .body(
-                            StatusResponseModel
-                                    .builder()
-                                    .error("Все сайты уже проиндексированы!")
-                                    .result(false)
-                                    .build()
-                    );
-        }
-
-        if (this.indexingService.isStarted()) {
+        if (this.indexingService.isIndexationStarted()) {
             return ResponseEntity.badRequest().body(
                     StatusResponseModel
                             .builder()
@@ -37,13 +25,13 @@ public class IndexationsController {
                             .build()
             );
         }
-        this.indexingService.start();
+        this.indexingService.startIndexation();
         return ResponseEntity.ok(StatusResponseModel.builder().result(true).build());
     }
 
     @GetMapping("/stopIndexing")
     public ResponseEntity<StatusResponseModel> stopIndexation() {
-        this.indexingService.stop();
+        this.indexingService.stopIndexation();
         return ResponseEntity.ok(StatusResponseModel.builder().result(true).build());
     }
 }

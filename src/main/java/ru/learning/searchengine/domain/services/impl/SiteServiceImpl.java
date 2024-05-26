@@ -38,10 +38,6 @@ public class SiteServiceImpl implements SiteService {
         return siteEntityList.stream().map(SiteMapper.INSTANCE::entityToDto).toList();
     }
 
-    public boolean isAllSitesIndexed() {
-        return !this.siteRepository.existsByStatusIn(SiteStatus.getNonIndexedStatuses());
-    }
-
     @Override
     public void save(SiteDto siteDto) {
         this.siteRepository.findById(siteDto.getId()).ifPresent(

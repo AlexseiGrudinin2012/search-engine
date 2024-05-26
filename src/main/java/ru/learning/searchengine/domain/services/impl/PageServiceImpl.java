@@ -48,6 +48,7 @@ public class PageServiceImpl implements PageService {
     }
 
     private PageEntity convertForEntityAndUpdate(PageDto fetchedPageDto, Long siteId) {
+        //TODO УБрать
         Optional<PageEntity> persistedPageEntity =
                 this.pageRepository.findByPathAndSiteId(fetchedPageDto.getPath(), siteId);
 
@@ -63,5 +64,11 @@ public class PageServiceImpl implements PageService {
                 .addKeyValue("@fetchedPageDto", fetchedPageDto)
                 .log("Обновляем содержимое страницы");
         return PageMapper.INSTANCE.updateEntity(fetchedPageDto, persistedPageEntity.get());
+    }
+
+
+    @Override
+    public void truncatePages() {
+        this.pageRepository.truncatePages();
     }
 }
