@@ -13,7 +13,6 @@ import ru.learning.searchengine.persistance.entities.PageEntity;
 import ru.learning.searchengine.persistance.repositories.PageRepository;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -25,49 +24,26 @@ public class PageServiceImpl implements PageService {
 
     @Override
     public Long getPagesCount(SiteDto siteDto) {
-        return siteDto == null || siteDto.getId() == null ? 0L :
-                this.pageRepository.countBySiteId(siteDto.getId());
+        return siteDto != null && siteDto.getId() != null
+                ? this.pageRepository.countBySiteId(siteDto.getId())
+                : 0L;
+    }
+
+    @Transactional
+    public void saveAll(Set<PageDto> fetchedPages) {
+        if (CollectionUtils.isEmpty(fetchedPages)) {
+            return;
+        }
+        List<PageEntity> saveList = fetchedPages
+                .stream()
+                .filter(p -> !this.pageRepository.existsByPath(p.getPath()))
+                .map(PageMapper.INSTANCE::dtoToEntity)
+                .toList();
+        this.pageRepository.saveAll(saveList);
     }
 
     @Override
     @Transactional
-    public void saveAllBySite(Long siteId, Set<PageDto> fetchedPages) {
-        if (fetchedPages == null) {
-            return;
-        }
-
-        List<PageEntity> forSavedPagesList = fetchedPages
-                .stream()
-                .map(e -> this.convertForEntityAndUpdate(e, siteId))
-                .toList();
-
-        if (CollectionUtils.isEmpty(forSavedPagesList)) {
-            return;
-        }
-        this.pageRepository.saveAllAndFlush(forSavedPagesList);
-    }
-
-    private PageEntity convertForEntityAndUpdate(PageDto fetchedPageDto, Long siteId) {
-        //TODO УБрать
-        Optional<PageEntity> persistedPageEntity =
-                this.pageRepository.findByPathAndSiteId(fetchedPageDto.getPath(), siteId);
-
-        if (persistedPageEntity.isEmpty()) {
-            log.atInfo()
-                    .addKeyValue("@fetchedPageDto", fetchedPageDto)
-                    .addKeyValue("siteName", fetchedPageDto.getSite().getName())
-                    .log("Найдена новая страница у сайта");
-            return PageMapper.INSTANCE.dtoToEntity(fetchedPageDto);
-        }
-
-        log.atInfo()
-                .addKeyValue("@fetchedPageDto", fetchedPageDto)
-                .log("Обновляем содержимое страницы");
-        return PageMapper.INSTANCE.updateEntity(fetchedPageDto, persistedPageEntity.get());
-    }
-
-
-    @Override
     public void truncatePages() {
         this.pageRepository.truncatePages();
     }

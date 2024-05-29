@@ -8,4 +8,6 @@ import java.util.List;
 
 public interface SiteRepository extends JpaRepository<SiteEntity, Long> {
     List<SiteEntity> findByStatusIn(List<SiteStatus> siteStatus);
+
+    boolean existsAllByStatusIn(List<SiteStatus> siteStatuses);
 }

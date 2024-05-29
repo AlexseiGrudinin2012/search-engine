@@ -12,9 +12,13 @@ public interface IndexingService {
 
     boolean isIndexationStarted();
 
-    void save(SiteDto siteDto, Throwable throwable, Set<PageDto> pageDtoSet);
 
-    void updateStatus(SiteDto siteDto, Throwable throwable);
+    void savePages(SiteDto siteDto, Set<PageDto> pageDtoSet);
+
+
+    void saveSiteStatusFailed(SiteDto siteDto, Throwable throwable);
 
     void saveSiteStatusIndexed(SiteDto siteDto);
+
+    void saveSiteStatusIndexing(SiteDto siteDto);
 }

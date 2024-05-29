@@ -54,23 +54,24 @@ class RecursiveWebAnalyzerTask extends RecursiveAction {
     @Override
     public void compute() {
         try {
-            RecursiveWebAnalyzerTask.service.updateStatus(this.siteDto, null);
             String currentLink = StringUtils.isEmpty(this.currentLink)
                     ? this.siteDto.getUrl()
                     : this.currentLink;
 
             if (!RecursiveWebAnalyzerTask.service.isIndexationStarted()) {
+                //Ставим статус завершения пользователем
+                RecursiveWebAnalyzerTask.service.saveSiteStatusFailed(this.siteDto, null);
                 return;
             }
+
+            RecursiveWebAnalyzerTask.service.saveSiteStatusIndexing(this.siteDto);
 
             Set<PageDto> children = this.getChildren(currentLink);
             if (CollectionUtils.isEmpty(children)) {
-                RecursiveWebAnalyzerTask.service.updateStatus(this.siteDto, null);
                 return;
-            } else {
-                RecursiveWebAnalyzerTask.service.save(this.siteDto, null, children);
             }
 
+            RecursiveWebAnalyzerTask.service.savePages(this.siteDto, children);
             List<RecursiveWebAnalyzerTask> newTasks = children
                     .stream()
                     .map(PageDto::getPath)
@@ -78,23 +79,18 @@ class RecursiveWebAnalyzerTask extends RecursiveAction {
                     .toList();
 
             newTasks.forEach(ForkJoinTask::join);
-            if (!RecursiveWebAnalyzerTask.service.isIndexationStarted()) {
-                return;
-            }
-            RecursiveWebAnalyzerTask.service.saveSiteStatusIndexed(this.siteDto);
         } catch (CancellationException e) {
             log.atInfo()
                     .setCause(e)
                     .log("Задача была отменена автоматически");
-            RecursiveWebAnalyzerTask.service.updateStatus(this.siteDto, e);
+            RecursiveWebAnalyzerTask.service.saveSiteStatusFailed(this.siteDto, e);
         } catch (Exception e) {
             //Останавливаем индексацию в случае ошибки, проставляем статус и время
             log.atError()
                     .setCause(e)
                     .addKeyValue("currentLink", currentLink)
                     .log("Ошибка во время парсинга страницы");
-            RecursiveWebAnalyzerTask.service.updateStatus(this.siteDto, e);
-            throw new RuntimeException(e);
+            RecursiveWebAnalyzerTask.service.saveSiteStatusFailed(this.siteDto, e);
         }
     }
 
@@ -115,10 +111,10 @@ class RecursiveWebAnalyzerTask extends RecursiveAction {
                 .execute();
         return response == null || !this.isValidContentType(response.contentType())
                 ? Collections.emptySet()
-                : this.parseResponse(response);
+                : this.parsePages(response);
     }
 
-    private Set<PageDto> parseResponse(Connection.Response response) throws IOException {
+    private Set<PageDto> parsePages(Connection.Response response) throws IOException {
         String content = response.body();
         int httpCode = response.statusCode();
         return response.parse()

@@ -8,7 +8,7 @@ import java.util.Set;
 public interface PageService {
     Long getPagesCount(SiteDto siteDto);
 
-    void saveAllBySite(Long siteId, Set<PageDto> fetchedPages);
+    void saveAll(Set<PageDto> fetchedPages);
 
     void truncatePages();
 }

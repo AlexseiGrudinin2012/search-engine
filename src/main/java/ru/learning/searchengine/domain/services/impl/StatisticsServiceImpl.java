@@ -13,6 +13,8 @@ import ru.learning.searchengine.domain.services.PageService;
 import ru.learning.searchengine.domain.services.SiteService;
 import ru.learning.searchengine.domain.services.StatisticsService;
 import ru.learning.searchengine.infrastructure.exceptions.SiteNotFoundException;
+import ru.learning.searchengine.infrastructure.mappers.StatisticsMapper;
+import ru.learning.searchengine.presentation.models.statistics.StatisticsResponseModel;
 
 import java.util.List;
 
@@ -27,7 +29,7 @@ public class StatisticsServiceImpl implements StatisticsService {
     private final LemmaService lemmaService;
 
     @Override
-    public StatisticsDto getStatistics() {
+    public StatisticsResponseModel getStatistics() {
         List<SiteDto> siteDtos = this.siteService.getSiteList();
         if (CollectionUtils.isEmpty(siteDtos)) {
             throw new SiteNotFoundException();
@@ -38,10 +40,10 @@ public class StatisticsServiceImpl implements StatisticsService {
                         .map(this::getDetailedStatisticsItem)
                         .toList();
 
-        return StatisticsDto.builder()
+        return StatisticsMapper.INSTANCE.dtoToModel(StatisticsDto.builder()
                 .statistics(this.getStatisticsDataDto(detailed))
                 .result(true)
-                .build();
+                .build());
     }
 
     private StatisticsDataDto getStatisticsDataDto(List<DetailedStatisticsItemDto> detailedStatisticsItemDtos) {
