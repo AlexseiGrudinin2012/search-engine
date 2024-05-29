@@ -4,7 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.learning.searchengine.domain.dto.healthcheck.HealthCheckDto;
 import ru.learning.searchengine.domain.services.HealthCheckService;
+import ru.learning.searchengine.infrastructure.mappers.HealthCheckMapper;
 import ru.learning.searchengine.persistance.repositories.HealthCheckRepository;
+import ru.learning.searchengine.presentation.models.healthcheck.HealthCheckResponseModel;
 
 @Service
 @RequiredArgsConstructor
@@ -12,9 +14,11 @@ public class HealthCheckServiceImpl implements HealthCheckService {
     private final HealthCheckRepository healthCheckRepository;
 
     @Override
-    public HealthCheckDto getHealthCheck() {
+    public HealthCheckResponseModel getHealthCheck() {
         boolean isDbAlive = this.performDBHealthCheck();
-        return new HealthCheckDto(isDbAlive);
+        return HealthCheckMapper.INSTANCE.dtoToModel(
+                new HealthCheckDto(isDbAlive)
+        );
     }
 
     public boolean performDBHealthCheck() {

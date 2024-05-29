@@ -1,7 +1,7 @@
 package ru.learning.searchengine.domain.services;
 
-import ru.learning.searchengine.domain.dto.healthcheck.HealthCheckDto;
+import ru.learning.searchengine.presentation.models.healthcheck.HealthCheckResponseModel;
 
 public interface HealthCheckService {
-    HealthCheckDto getHealthCheck();
+    HealthCheckResponseModel getHealthCheck();
 }

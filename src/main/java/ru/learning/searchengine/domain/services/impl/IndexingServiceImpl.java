@@ -17,7 +17,7 @@ import ru.learning.searchengine.infrastructure.jsoup.JsoupConfig;
 import ru.learning.searchengine.infrastructure.multithreads.ForkJoinPoolWrapper;
 import ru.learning.searchengine.infrastructure.multithreads.MultithreadExecutor;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -135,7 +135,7 @@ public class IndexingServiceImpl implements IndexingService {
             siteDto.setStatus(siteStatus);
         }
 
-        siteDto.setStatusTime(new Date());
+        siteDto.setStatusTime(LocalDateTime.now());
         this.siteService.save(siteDto);
     }
 
