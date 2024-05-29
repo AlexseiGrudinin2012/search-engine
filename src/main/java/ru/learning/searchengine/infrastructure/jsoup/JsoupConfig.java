@@ -19,7 +19,7 @@ public class JsoupConfig {
     @Value("${app.jsoup.config.max-body-size}")
     private int maxBodySize;
 
-    @Value("${app.jsoup.config.timeout}")
+    @Value("${app.jsoup.config.timeout.milliseconds}")
     private int timeout;
 
     @Value("${app.jsoup.config.ignore-content-type}")
