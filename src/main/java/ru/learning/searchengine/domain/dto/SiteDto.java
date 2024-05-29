@@ -4,7 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 import ru.learning.searchengine.domain.enums.SiteStatus;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -14,7 +14,7 @@ public class SiteDto {
 
     private SiteStatus status;
 
-    private Date statusTime;
+    private LocalDateTime statusTime;
 
     private String lastError;
 
