@@ -14,12 +14,19 @@ public class ErrorDetailsDto {
 
     private String controllerClassName;
 
+    private Throwable throwable;
+
     private StackTraceElement[] stackTraceElements;
 
+    public ErrorDetailsDto(Throwable throwable) {
+        this(throwable, null);
+    }
+
     public ErrorDetailsDto(Throwable throwable, HttpStatus httpCode) {
-        this.errorMessage = throwable.getMessage();
-        this.stackTraceElements = throwable.getStackTrace();
-        this.errorClassName = throwable.getClass().getName();
+        this.throwable = throwable;
+        this.errorMessage = this.throwable.getMessage();
+        this.stackTraceElements = this.throwable.getStackTrace();
+        this.errorClassName = this.throwable.getClass().getName();
         this.httpCode = httpCode;
     }
 

@@ -1,5 +1,6 @@
 package ru.learning.searchengine.domain.services;
 
+import ru.learning.searchengine.domain.dto.ErrorDetailsDto;
 import ru.learning.searchengine.domain.dto.PageDto;
 import ru.learning.searchengine.domain.dto.SiteDto;
 
@@ -16,7 +17,7 @@ public interface IndexingService {
     void savePages(SiteDto siteDto, Set<PageDto> pageDtoSet);
 
 
-    void saveSiteStatusFailed(SiteDto siteDto, Throwable throwable);
+    void saveSiteStatusFailed(SiteDto siteDto, ErrorDetailsDto errorDetailsDto);
 
     void saveSiteStatusIndexed(SiteDto siteDto);
 

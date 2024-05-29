@@ -34,7 +34,7 @@ public class SiteServiceImpl implements SiteService {
 
     @Override
     @Transactional
-    public void save(SiteDto siteDto) {
+    public synchronized void save(SiteDto siteDto) {
         this.siteRepository.findById(siteDto.getId())
                 .ifPresent(
                         e ->

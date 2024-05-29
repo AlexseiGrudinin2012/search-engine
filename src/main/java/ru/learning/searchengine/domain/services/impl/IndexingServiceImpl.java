@@ -6,6 +6,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import ru.learning.searchengine.domain.dto.ErrorDetailsDto;
 import ru.learning.searchengine.domain.dto.PageDto;
 import ru.learning.searchengine.domain.dto.SiteDto;
 import ru.learning.searchengine.domain.enums.SiteStatus;
@@ -102,11 +103,12 @@ public class IndexingServiceImpl implements IndexingService {
 
     /****************************** STATUSES ********************************/
     @Override
-    public void saveSiteStatusFailed(SiteDto siteDto, Throwable throwable) {
-        String errorMessage =
-                throwable == null || throwable instanceof CancellationException
-                        ? STOP_TASK_MESSAGE
-                        : throwable.getMessage();
+    public void saveSiteStatusFailed(SiteDto siteDto, ErrorDetailsDto errorDetailsDto) {
+        String errorMessage = errorDetailsDto == null
+                || errorDetailsDto.getThrowable() == null
+                || errorDetailsDto.getThrowable() instanceof CancellationException
+                ? STOP_TASK_MESSAGE
+                : errorDetailsDto.getErrorMessage();
         this.saveSiteStatusFailed(siteDto, errorMessage);
     }
 
@@ -126,7 +128,7 @@ public class IndexingServiceImpl implements IndexingService {
         this.updateSiteStatus(siteDto, SiteStatus.INDEXING);
     }
 
-    private synchronized void updateSiteStatus(SiteDto siteDto, SiteStatus siteStatus) {
+    private void updateSiteStatus(SiteDto siteDto, SiteStatus siteStatus) {
         if (siteStatus == null || siteDto == null) {
             return;
         }

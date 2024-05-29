@@ -3,12 +3,16 @@ package ru.learning.searchengine.domain.services.impl.indexing.tasks;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Connection;
+import org.springframework.http.HttpStatus;
 import org.springframework.util.CollectionUtils;
+import ru.learning.searchengine.domain.dto.ErrorDetailsDto;
 import ru.learning.searchengine.domain.dto.PageDto;
 import ru.learning.searchengine.domain.dto.SiteDto;
 import ru.learning.searchengine.domain.services.IndexingService;
 
 import java.io.IOException;
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -28,8 +32,9 @@ class RecursiveWebAnalyzerTask extends RecursiveAction {
     private final String currentLink;
     private final SiteDto siteDto;
 
+    //Ну, думаю тут static не помешает ...конфиг и прочее не будет меняться динамически без перезапуска
     private static final String RESPONSE_CONTENT_TYPE = "text/html";
-    //Ну, думаю тут static не помешает ...конфиг не будет меняться динамически без перезапуска
+    private static final String SOCKET_TIMEOUT_MESSAGE = "Не удалось дождаться ответа от страницы \"%s\"";
     private static Connection connection;
     //Плохой подход ... но за отсутствием альтернатив решения без fork-join-pool...
     private static IndexingService service;
@@ -60,7 +65,7 @@ class RecursiveWebAnalyzerTask extends RecursiveAction {
 
             if (!RecursiveWebAnalyzerTask.service.isIndexationStarted()) {
                 //Ставим статус завершения пользователем
-                RecursiveWebAnalyzerTask.service.saveSiteStatusFailed(this.siteDto, null);
+                this.setStatusFailed(null);
                 return;
             }
 
@@ -83,14 +88,21 @@ class RecursiveWebAnalyzerTask extends RecursiveAction {
             log.atInfo()
                     .setCause(e)
                     .log("Задача была отменена автоматически");
-            RecursiveWebAnalyzerTask.service.saveSiteStatusFailed(this.siteDto, e);
+            this.setStatusFailed(e);
+        } catch (SocketTimeoutException | ConnectException e) {
+            log.atWarn()
+                    .setCause(e)
+                    .addKeyValue("@site", this.siteDto)
+                    .addKeyValue("currentLink", this.currentLink)
+                    .log("Не удалось дождаться ответа от страницы");
+            this.setStatusFailed(e);
         } catch (Exception e) {
             //Останавливаем индексацию в случае ошибки, проставляем статус и время
             log.atError()
                     .setCause(e)
-                    .addKeyValue("currentLink", currentLink)
-                    .log("Ошибка во время парсинга страницы");
-            RecursiveWebAnalyzerTask.service.saveSiteStatusFailed(this.siteDto, e);
+                    .addKeyValue("currentLink", this.currentLink)
+                    .log("Неизвестная ошибка во время парсинга страницы");
+            this.setStatusFailed(e);
         }
     }
 
@@ -105,7 +117,7 @@ class RecursiveWebAnalyzerTask extends RecursiveAction {
 
     //Даже у него была девушка ...
     public Set<PageDto> getChildren(final String link) throws IOException {
-        Connection.Response response = connection
+        Connection.Response response = RecursiveWebAnalyzerTask.connection
                 .newRequest()
                 .url(link)
                 .execute();
@@ -150,5 +162,29 @@ class RecursiveWebAnalyzerTask extends RecursiveAction {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+    }
+
+    private void setStatusFailed(Throwable throwable) {
+        if (throwable == null) {
+            RecursiveWebAnalyzerTask.service.saveSiteStatusFailed(this.siteDto, null);
+            return;
+        }
+
+        ErrorDetailsDto errorDetailsDtoBuilder = new ErrorDetailsDto(throwable);
+        if (throwable instanceof CancellationException) {
+            RecursiveWebAnalyzerTask.service.saveSiteStatusFailed(this.siteDto, errorDetailsDtoBuilder);
+            return;
+        }
+
+        if (throwable instanceof SocketTimeoutException || throwable instanceof ConnectException) {
+            errorDetailsDtoBuilder.setErrorMessage(String.format(SOCKET_TIMEOUT_MESSAGE, this.currentLink));
+            errorDetailsDtoBuilder.setHttpCode(HttpStatus.REQUEST_TIMEOUT);
+            RecursiveWebAnalyzerTask.service.saveSiteStatusFailed(this.siteDto, errorDetailsDtoBuilder);
+            return;
+        }
+
+        errorDetailsDtoBuilder.setErrorMessage(throwable.getMessage());
+        errorDetailsDtoBuilder.setHttpCode(HttpStatus.BAD_REQUEST);
+        RecursiveWebAnalyzerTask.service.saveSiteStatusFailed(this.siteDto, errorDetailsDtoBuilder);
     }
 }

@@ -16,6 +16,7 @@ import ru.learning.searchengine.infrastructure.exceptions.SiteNotFoundException;
 import ru.learning.searchengine.infrastructure.mappers.StatisticsMapper;
 import ru.learning.searchengine.presentation.models.statistics.StatisticsResponseModel;
 
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -38,6 +39,7 @@ public class StatisticsServiceImpl implements StatisticsService {
         List<DetailedStatisticsItemDto> detailed =
                 siteDtos.stream()
                         .map(this::getDetailedStatisticsItem)
+                        .sorted(Comparator.comparing(DetailedStatisticsItemDto::getName))
                         .toList();
 
         return StatisticsMapper.INSTANCE.dtoToModel(StatisticsDto.builder()
@@ -55,8 +57,6 @@ public class StatisticsServiceImpl implements StatisticsService {
     }
 
     private TotalStatisticsDto getTotalStatisticsDto(List<DetailedStatisticsItemDto> detailedStatisticsItemDtos) {
-        //Можем делать запросы по сайтам на запрос страниц и лемм, но так как уже всё запросили,
-        //то лучше взять из detailedStatisticsItem и высчитать сумму уже запрошенного количества страниц и лемм
         return TotalStatisticsDto
                 .builder()
                 .sites(detailedStatisticsItemDtos.size())
