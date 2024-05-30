@@ -18,6 +18,7 @@ import ru.learning.searchengine.infrastructure.jsoup.JsoupConfig;
 import ru.learning.searchengine.infrastructure.multithreads.ForkJoinPoolWrapper;
 import ru.learning.searchengine.infrastructure.multithreads.MultithreadExecutor;
 
+import java.net.ConnectException;
 import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
@@ -107,6 +108,7 @@ public class IndexingServiceImpl implements IndexingService {
         String errorMessage = errorDetailsDto == null
                 || errorDetailsDto.getThrowable() == null
                 || errorDetailsDto.getThrowable() instanceof CancellationException
+                || errorDetailsDto.getThrowable() instanceof ConnectException
                 ? STOP_TASK_MESSAGE
                 : errorDetailsDto.getErrorMessage();
         this.saveSiteStatusFailed(siteDto, errorMessage);
