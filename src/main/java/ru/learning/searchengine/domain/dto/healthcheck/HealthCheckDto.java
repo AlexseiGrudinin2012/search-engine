@@ -11,6 +11,6 @@ public class HealthCheckDto {
 
     public HealthCheckDto(boolean isHealthy) {
         this.isHealthy = isHealthy;
-        this.date = new Date();
+        date = new Date();
     }
 }

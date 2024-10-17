@@ -15,6 +15,6 @@ public class HealthCheckController {
 
     @GetMapping()
     public HealthCheckResponseModel getHealthCheck() {
-        return this.healthCheckService.getHealthCheck();
+        return healthCheckService.getHealthCheck();
     }
 }

@@ -15,7 +15,7 @@ public class HealthCheckServiceImpl implements HealthCheckService {
 
     @Override
     public HealthCheckResponseModel getHealthCheck() {
-        boolean isDbAlive = this.performDBHealthCheck();
+        boolean isDbAlive = performDBHealthCheck();
         return HealthCheckMapper.INSTANCE.dtoToModel(
                 new HealthCheckDto(isDbAlive)
         );
@@ -23,7 +23,7 @@ public class HealthCheckServiceImpl implements HealthCheckService {
 
     public boolean performDBHealthCheck() {
         try {
-            this.healthCheckRepository.performDbHealthCheck(); // Вызов запроса SELECT 1
+            healthCheckRepository.performDbHealthCheck(); // Вызов запроса SELECT 1
             return true; // Если запрос выполнен успешно, возвращаем true
         } catch (Exception e) {
             return false; // Если произошла ошибка, возвращаем false

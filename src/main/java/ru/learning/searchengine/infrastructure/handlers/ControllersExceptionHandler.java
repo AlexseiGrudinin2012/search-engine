@@ -25,7 +25,7 @@ public class ControllersExceptionHandler {
                 .addKeyValue("@invalidModel", e.getTarget())
                 .log("Ошибка валидации значений во время обращения к контроллеру");
         HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
-        return new ResponseEntity<>(this.getErrorDetailsModel(e, httpStatus, handlerMethod), httpStatus);
+        return new ResponseEntity<>(getErrorDetailsModel(e, httpStatus, handlerMethod), httpStatus);
     }
 
     @ExceptionHandler(SiteNotFoundException.class)
@@ -34,7 +34,7 @@ public class ControllersExceptionHandler {
                 .setCause(e)
                 .log("Список сайтов для индексации пуст");
         HttpStatus httpStatus = HttpStatus.NOT_FOUND;
-        return new ResponseEntity<>(this.getErrorDetailsModel(e, httpStatus, handlerMethod), httpStatus);
+        return new ResponseEntity<>(getErrorDetailsModel(e, httpStatus, handlerMethod), httpStatus);
     }
 
     @ExceptionHandler(Exception.class)
@@ -43,7 +43,7 @@ public class ControllersExceptionHandler {
                 .setCause(e)
                 .log("Неизвестная ошибка во время обращения к контроллеру");
         HttpStatus httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
-        return new ResponseEntity<>(this.getErrorDetailsModel(e, httpStatus, handlerMethod), httpStatus);
+        return new ResponseEntity<>(getErrorDetailsModel(e, httpStatus, handlerMethod), httpStatus);
     }
 
     private StatusResponseModel getErrorDetailsModel(Throwable throwable, HttpStatus status, HandlerMethod handlerMethod) {

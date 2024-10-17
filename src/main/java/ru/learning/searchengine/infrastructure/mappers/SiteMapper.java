@@ -15,4 +15,6 @@ public interface SiteMapper {
 
     @Mapping(target = "id", ignore = true)
     SiteEntity updateEntity(SiteDto newValue, @MappingTarget SiteEntity entityToUpdate);
+
+    SiteEntity dtoToEntity(SiteDto siteDto);
 }

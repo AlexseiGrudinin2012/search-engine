@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-//Ну...вроде бы не плохо, однако...
 public class JsoupConfig {
     @Value("${app.jsoup.config.userAgent}")
     private String userAgent;
@@ -34,12 +33,12 @@ public class JsoupConfig {
 
     public Connection getConnection() {
         Connection connection = Jsoup.newSession()
-                .ignoreContentType(this.isContentTypeIgnore)
-                .ignoreHttpErrors(this.isHttpErrorsIgnore)
-                .userAgent(this.userAgent)
-                .referrer(this.referrer)
-                .maxBodySize(this.maxBodySize)
-                .timeout(this.timeout);
-        return this.isSslUse ? connection.sslSocketFactory(new JsoupSSLSocketFactory().get()) : connection;
+                .ignoreContentType(isContentTypeIgnore)
+                .ignoreHttpErrors(isHttpErrorsIgnore)
+                .userAgent(userAgent)
+                .referrer(referrer)
+                .maxBodySize(maxBodySize)
+                .timeout(timeout);
+        return isSslUse ? connection.sslSocketFactory(new JsoupSSLSocketFactory().get()) : connection;
     }
 }

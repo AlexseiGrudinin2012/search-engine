@@ -10,5 +10,5 @@ public interface PageService {
 
     void saveAll(Set<PageDto> fetchedPages);
 
-    void truncatePages();
+    void deleteAll();
 }

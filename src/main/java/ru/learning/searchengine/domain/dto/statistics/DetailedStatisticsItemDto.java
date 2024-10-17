@@ -10,8 +10,8 @@ public class DetailedStatisticsItemDto {
     private String url;
     private String name;
     private SiteStatus status;
-    private Long statusTime;
+    private long statusTime;
     private String error;
-    private Long pages;
-    private Long lemmas;
+    private long pages;
+    private long lemmas;
 }

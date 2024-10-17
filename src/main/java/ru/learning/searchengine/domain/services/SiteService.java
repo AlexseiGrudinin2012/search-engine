@@ -7,9 +7,7 @@ import java.util.List;
 
 
 public interface SiteService {
-    List<SiteDto> getSiteList();
-
-    List<SiteDto> getSiteListByStatuses(List<SiteStatus> siteStatuses);
+    List<SiteDto> getAllSites();
 
     void save(SiteDto siteDto);
 

@@ -16,7 +16,7 @@ public class IndexationsController {
 
     @GetMapping("/startIndexing")
     public ResponseEntity<StatusResponseModel> startIndexation() {
-        if (this.indexingService.isIndexationStarted()) {
+        if (indexingService.isIndexationStarted()) {
             return ResponseEntity.badRequest().body(
                     StatusResponseModel
                             .builder()
@@ -25,13 +25,13 @@ public class IndexationsController {
                             .build()
             );
         }
-        this.indexingService.startIndexation();
+        indexingService.startIndexation();
         return ResponseEntity.ok(StatusResponseModel.builder().result(true).build());
     }
 
     @GetMapping("/stopIndexing")
     public ResponseEntity<StatusResponseModel> stopIndexation() {
-        this.indexingService.stopIndexation();
+        indexingService.stopIndexation();
         return ResponseEntity.ok(StatusResponseModel.builder().result(true).build());
     }
 }

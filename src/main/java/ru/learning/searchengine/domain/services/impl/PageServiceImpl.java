@@ -13,6 +13,7 @@ import ru.learning.searchengine.persistance.entities.PageEntity;
 import ru.learning.searchengine.persistance.repositories.PageRepository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -24,27 +25,30 @@ public class PageServiceImpl implements PageService {
 
     @Override
     public Long getPagesCount(SiteDto siteDto) {
-        return siteDto != null && siteDto.getId() != null
-                ? this.pageRepository.countBySiteId(siteDto.getId())
-                : 0L;
+        return Optional
+                .ofNullable(siteDto)
+                .map(SiteDto::getId)
+                .map(pageRepository::countBySiteId)
+                .orElse(0L);
     }
 
     @Transactional
+    @Override
     public void saveAll(Set<PageDto> fetchedPages) {
         if (CollectionUtils.isEmpty(fetchedPages)) {
             return;
         }
         List<PageEntity> saveList = fetchedPages
                 .stream()
-                .filter(p -> !this.pageRepository.existsByPath(p.getPath()))
+                .filter(p -> !pageRepository.existsByPath(p.getPath()))
                 .map(PageMapper.INSTANCE::dtoToEntity)
                 .toList();
-        this.pageRepository.saveAll(saveList);
+        pageRepository.saveAll(saveList);
     }
 
     @Override
     @Transactional
-    public void truncatePages() {
-        this.pageRepository.truncatePages();
+    public void deleteAll() {
+        pageRepository.deleteAll();
     }
 }

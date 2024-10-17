@@ -6,6 +6,8 @@ import ru.learning.searchengine.domain.dto.SiteDto;
 import ru.learning.searchengine.domain.services.LemmaService;
 import ru.learning.searchengine.persistance.repositories.LemmaRepository;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class LemmaServiceImpl implements LemmaService {
@@ -14,8 +16,9 @@ public class LemmaServiceImpl implements LemmaService {
 
     @Override
     public Long getLemmaCount(SiteDto siteDto) {
-        return siteDto == null || siteDto.getId() == null ?
-                0L :
-                this.lemmaRepository.countBySiteId(siteDto.getId());
+        return Optional.of(siteDto)
+                .map(SiteDto::getId)
+                .map(lemmaRepository::countBySiteId)
+                .orElse(0L);
     }
 }

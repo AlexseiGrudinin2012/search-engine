@@ -23,6 +23,6 @@ public class StatisticsController {
      */
     @GetMapping
     public ResponseEntity<StatisticsResponseModel> statistics() {
-        return ResponseEntity.ok(this.statisticsService.getStatistics());
+        return ResponseEntity.ok(statisticsService.getStatistics());
     }
 }

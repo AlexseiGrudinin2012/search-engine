@@ -31,7 +31,7 @@ public class StatisticsServiceImpl implements StatisticsService {
 
     @Override
     public StatisticsResponseModel getStatistics() {
-        List<SiteDto> siteDtos = this.siteService.getSiteList();
+        List<SiteDto> siteDtos = this.siteService.getAllSites();
         if (CollectionUtils.isEmpty(siteDtos)) {
             throw new SiteNotFoundException();
         }
@@ -72,8 +72,8 @@ public class StatisticsServiceImpl implements StatisticsService {
                 .name(siteDto.getName())
                 .url(siteDto.getUrl())
                 .status(siteDto.getStatus())
-                .pages(this.pageService.getPagesCount(siteDto))
-                .lemmas(this.lemmaService.getLemmaCount(siteDto))
+                .pages(pageService.getPagesCount(siteDto))
+                .lemmas(lemmaService.getLemmaCount(siteDto))
                 .error(siteDto.getLastError())
                 .statusTime(System.currentTimeMillis())
                 .build();
