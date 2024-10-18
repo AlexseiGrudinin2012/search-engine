@@ -3,6 +3,7 @@ package ru.learning.searchengine.domain.services.impl.indexing;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import ru.learning.searchengine.domain.dto.SiteDto;
 import ru.learning.searchengine.domain.services.IndexingService;
 import ru.learning.searchengine.domain.services.PageService;
@@ -10,76 +11,82 @@ import ru.learning.searchengine.domain.services.SiteService;
 import ru.learning.searchengine.domain.services.impl.indexing.model.IndexingResultDto;
 import ru.learning.searchengine.domain.services.impl.indexing.tasks.RecursiveWebAnalyzerTask;
 import ru.learning.searchengine.infrastructure.jsoup.JsoupConfig;
-import ru.learning.searchengine.infrastructure.multithreads.ForkJoinPoolWrapper;
 import ru.learning.searchengine.infrastructure.multithreads.MultithreadTaskExecutor;
-import ru.learning.searchengine.infrastructure.multithreads.impl.ForkJoinPoolWrapperImpl;
+import ru.learning.searchengine.presentation.models.StatusResponseModel;
 
-import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class IndexingServiceImpl implements IndexingService {
 
+    private final static String INDEXATION_STARTED_MESSAGE = "Индексация уже запущена!";
+    private final static String EMPTY_SITE_LIST_MESSAGE = "Отсутствуют сайты для выполнения индексации";
     private final SiteService siteService;
     private final PageService pageService;
-    private final JsoupConfig jsoupConfig;
-    private final MultithreadTaskExecutor multithreadTaskExecutor;
     private volatile boolean isIndexationStarted = false;
+    private final JsoupConfig jsoupConfig;
+    private final MultithreadTaskExecutor<Void> multithreadTaskExecutor;
 
     @Override
-    public void startIndexation() {
-        isIndexationStarted = true;
-
-        Optional<SiteDto> siteDto = siteService.findSiteById(4L);
-
-        if (siteDto.isEmpty()) {
-            return;
+    public StatusResponseModel startIndexation() {
+        if (isIndexationStarted) {
+            return buildResponseModel(INDEXATION_STARTED_MESSAGE, false);
         }
-
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
-        executorService.submit(() -> startParsePagesTask(siteDto.get()));
-
-
-//        siteService.getAllSites().forEach(s ->);
-//        multithreadTaskExecutor.run();
+        List<SiteDto> siteDtos = siteService.getAllSites();
+        if (CollectionUtils.isEmpty(siteDtos)) {
+            setIndexationState(false);
+            return buildResponseModel(EMPTY_SITE_LIST_MESSAGE, false);
+        }
+        setIndexationState(true);
+        List<RecursiveWebAnalyzerTask> tasks = siteDtos
+                .stream()
+                .map(this::getNewIndexationTask)
+                .toList();
+        tasks.forEach(multithreadTaskExecutor::run);
+        return buildResponseModel(null, true);
     }
 
     @Override
-    public void stopIndexation() {
-        isIndexationStarted = false;
-        System.out.println("Is stoped");
-//        multithreadTaskExecutor.shutdownAll();
+    public StatusResponseModel stopIndexation() {
+        setIndexationState(false);
+        multithreadTaskExecutor.shutdownAll();
+        return buildResponseModel(null, true);
     }
 
-    @Override
-    public boolean isIndexationStarted() {
+
+    private boolean isIndexationStarted() {
         return isIndexationStarted;
     }
 
-    private void saveResult(IndexingResultDto indexingResultDto) {
-
-        System.out.printf(
-                "Status - %s, lastError: %s%n",
-                indexingResultDto.getSite().getStatus(),
-                indexingResultDto.getSite().getLastError()
+    private RecursiveWebAnalyzerTask getNewIndexationTask(SiteDto siteDto) {
+        return new RecursiveWebAnalyzerTask(
+                siteDto,
+                jsoupConfig.getConnection(),
+                this::saveResult,
+                this::isIndexationStarted
         );
-
     }
 
+    private void setIndexationState(boolean isStarted) {
+        this.isIndexationStarted = isStarted;
+    }
 
-    private void startParsePagesTask(SiteDto siteDto) {
-        try (ForkJoinPoolWrapper<Void> forkJoinPoolWrapper = new ForkJoinPoolWrapperImpl<>()) {
-            forkJoinPoolWrapper.invoke(
-                    new RecursiveWebAnalyzerTask(
-                            siteDto,
-                            jsoupConfig.getConnection(),
-                            this::saveResult,
-                            this::isIndexationStarted
-                    )
-            );
-        }
+    private void saveResult(IndexingResultDto indexingResultDto) {
+        System.out.printf(
+                "Status - %s, lastError: %s, siteUrl - %s%n",
+                indexingResultDto.getSite().getStatus(),
+                indexingResultDto.getSite().getLastError(),
+                indexingResultDto.getSite().getUrl()
+        );
+    }
+
+    private StatusResponseModel buildResponseModel(String error, boolean result) {
+        return StatusResponseModel
+                .builder()
+                .result(result)
+                .error(error)
+                .build();
     }
 }

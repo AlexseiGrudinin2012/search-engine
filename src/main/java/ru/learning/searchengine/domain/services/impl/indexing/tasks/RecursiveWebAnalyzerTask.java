@@ -90,7 +90,7 @@ final public class RecursiveWebAnalyzerTask extends RecursiveAction {
             log.atInfo()
                     .setCause(e)
                     .log("Задача была отменена автоматически");
-            IndexingSiteHelper.getInstance().updateSiteInfo(rootSiteDto, SiteStatus.FAILED);
+            IndexingSiteHelper.getInstance().updateSiteInfo(rootSiteDto, SiteStatus.FAILED, e);
         } catch (Exception e) {
             log.atError()
                     .setCause(e)

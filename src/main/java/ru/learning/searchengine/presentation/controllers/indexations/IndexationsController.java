@@ -16,22 +16,14 @@ public class IndexationsController {
 
     @GetMapping("/startIndexing")
     public ResponseEntity<StatusResponseModel> startIndexation() {
-        if (indexingService.isIndexationStarted()) {
-            return ResponseEntity.badRequest().body(
-                    StatusResponseModel
-                            .builder()
-                            .error("Индексация уже запущена")
-                            .result(false)
-                            .build()
-            );
-        }
-        indexingService.startIndexation();
-        return ResponseEntity.ok(StatusResponseModel.builder().result(true).build());
+        StatusResponseModel statusResponseModel = indexingService.startIndexation();
+        return statusResponseModel.isResult()
+                ? ResponseEntity.ok(statusResponseModel)
+                : ResponseEntity.badRequest().body(statusResponseModel);
     }
 
     @GetMapping("/stopIndexing")
     public ResponseEntity<StatusResponseModel> stopIndexation() {
-        indexingService.stopIndexation();
-        return ResponseEntity.ok(StatusResponseModel.builder().result(true).build());
+        return ResponseEntity.ok(indexingService.stopIndexation());
     }
 }

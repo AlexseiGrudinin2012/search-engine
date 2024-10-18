@@ -1,8 +1,10 @@
 package ru.learning.searchengine.infrastructure.multithreads;
 
-public interface MultithreadTaskExecutor {
+import java.util.concurrent.ForkJoinTask;
 
-    void run(Runnable runnable);
+public interface MultithreadTaskExecutor<RETURN_VALUE> {
+
+    void run(ForkJoinTask<RETURN_VALUE> action);
 
     void shutdownAll();
 }

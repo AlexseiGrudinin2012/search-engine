@@ -1,9 +1,9 @@
 package ru.learning.searchengine.domain.services;
 
+import ru.learning.searchengine.presentation.models.StatusResponseModel;
+
 public interface IndexingService {
-    void startIndexation();
+    StatusResponseModel startIndexation();
 
-    void stopIndexation();
-
-    boolean isIndexationStarted();
+    StatusResponseModel stopIndexation();
 }

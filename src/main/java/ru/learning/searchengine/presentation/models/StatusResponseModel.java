@@ -7,6 +7,5 @@ import lombok.Data;
 @Builder
 public class StatusResponseModel {
     private String error;
-
-    private final boolean result;
+    private boolean result;
 }
