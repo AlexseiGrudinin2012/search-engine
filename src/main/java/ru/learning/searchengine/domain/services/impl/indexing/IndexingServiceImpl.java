@@ -20,7 +20,6 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class IndexingServiceImpl implements IndexingService {
-
     private final static String INDEXATION_STARTED_MESSAGE = "Индексация уже запущена!";
     private final static String EMPTY_SITE_LIST_MESSAGE = "Отсутствуют сайты для выполнения индексации";
     private final SiteService siteService;
@@ -31,11 +30,9 @@ public class IndexingServiceImpl implements IndexingService {
 
     @Override
     public StatusResponseModel startIndexation() {
-        setIndexationState(!multithreadTaskExecutor.isPoolSizeEmpty());
+        updateIndexationState(!multithreadTaskExecutor.isPoolSizeEmpty());
         if (isIndexationStarted) {
-            log.atWarn()
-                    .addKeyValue("isIndexationStarted", isIndexationStarted)
-                    .log(INDEXATION_STARTED_MESSAGE);
+            log.warn(INDEXATION_STARTED_MESSAGE);
             return buildResponseModel(INDEXATION_STARTED_MESSAGE, false);
         }
         List<SiteDto> siteDtos = siteService.getAllSites()
@@ -44,14 +41,12 @@ public class IndexingServiceImpl implements IndexingService {
                 .filter(s -> s.getId().equals(4L))
                 .toList();
         if (CollectionUtils.isEmpty(siteDtos)) {
-            setIndexationState(false);
-            log.atWarn()
-                    .addKeyValue("siteDtosSize", 0)
-                    .log(EMPTY_SITE_LIST_MESSAGE);
+            log.warn(EMPTY_SITE_LIST_MESSAGE);
             return buildResponseModel(EMPTY_SITE_LIST_MESSAGE, false);
         }
+
+        updateIndexationState(true);
         pageService.deleteAll();
-        setIndexationState(true);
         List<RecursiveWebAnalyzerTask> tasks = siteDtos
                 .stream()
                 .map(this::getNewIndexationTask)
@@ -63,12 +58,11 @@ public class IndexingServiceImpl implements IndexingService {
 
     @Override
     public StatusResponseModel stopIndexation() {
-        setIndexationState(false);
+        updateIndexationState(false);
         multithreadTaskExecutor.shutdownAll();
         log.info("Индексация остановлена");
         return buildResponseModel(null, true);
     }
-
 
     private boolean isIndexationStarted() {
         return isIndexationStarted;
@@ -83,8 +77,8 @@ public class IndexingServiceImpl implements IndexingService {
         );
     }
 
-    private void setIndexationState(boolean isStarted) {
-        this.isIndexationStarted = isStarted;
+    private void updateIndexationState(boolean isIndexationStarted) {
+        this.isIndexationStarted = isIndexationStarted;
     }
 
     private void saveResult(IndexingResultDto indexingResultDto) {
