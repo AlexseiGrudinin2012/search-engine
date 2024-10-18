@@ -31,20 +31,32 @@ public class IndexingServiceImpl implements IndexingService {
 
     @Override
     public StatusResponseModel startIndexation() {
+        setIndexationState(!multithreadTaskExecutor.isPoolSizeEmpty());
         if (isIndexationStarted) {
+            log.atWarn()
+                    .addKeyValue("isIndexationStarted", isIndexationStarted)
+                    .log(INDEXATION_STARTED_MESSAGE);
             return buildResponseModel(INDEXATION_STARTED_MESSAGE, false);
         }
-        List<SiteDto> siteDtos = siteService.getAllSites();
+        List<SiteDto> siteDtos = siteService.getAllSites()
+                .stream()
+                .filter(s -> s.getId().equals(4L))
+                .toList();
         if (CollectionUtils.isEmpty(siteDtos)) {
             setIndexationState(false);
+            log.atWarn()
+                    .addKeyValue("siteDtosSize", 0)
+                    .log(EMPTY_SITE_LIST_MESSAGE);
             return buildResponseModel(EMPTY_SITE_LIST_MESSAGE, false);
         }
+        pageService.deleteAll();
         setIndexationState(true);
         List<RecursiveWebAnalyzerTask> tasks = siteDtos
                 .stream()
                 .map(this::getNewIndexationTask)
                 .toList();
         tasks.forEach(multithreadTaskExecutor::run);
+        log.info("Индексация запущена");
         return buildResponseModel(null, true);
     }
 
@@ -52,6 +64,7 @@ public class IndexingServiceImpl implements IndexingService {
     public StatusResponseModel stopIndexation() {
         setIndexationState(false);
         multithreadTaskExecutor.shutdownAll();
+        log.info("Индексация остановлена");
         return buildResponseModel(null, true);
     }
 
@@ -74,12 +87,17 @@ public class IndexingServiceImpl implements IndexingService {
     }
 
     private void saveResult(IndexingResultDto indexingResultDto) {
-        System.out.printf(
-                "Status - %s, lastError: %s, siteUrl - %s%n",
-                indexingResultDto.getSite().getStatus(),
-                indexingResultDto.getSite().getLastError(),
-                indexingResultDto.getSite().getUrl()
-        );
+        if (indexingResultDto == null) {
+            return;
+        }
+        SiteDto siteDto = indexingResultDto.getSite();
+        siteService.save(siteDto);
+        pageService.saveAll(indexingResultDto.getPages());
+        log.atInfo()
+                .addKeyValue("siteId", siteDto.getId())
+                .addKeyValue("siteName", siteDto.getName())
+                .addKeyValue("siteUrl", siteDto.getUrl())
+                .log("Информация об индексации сайта обновлена");
     }
 
     private StatusResponseModel buildResponseModel(String error, boolean result) {

@@ -7,4 +7,6 @@ public interface MultithreadTaskExecutor<RETURN_VALUE> {
     void run(ForkJoinTask<RETURN_VALUE> action);
 
     void shutdownAll();
+
+    boolean isPoolSizeEmpty();
 }

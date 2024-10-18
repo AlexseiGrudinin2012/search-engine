@@ -3,7 +3,6 @@ package ru.learning.searchengine.domain.services.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import ru.learning.searchengine.domain.dto.PageDto;
 import ru.learning.searchengine.domain.dto.SiteDto;
@@ -32,7 +31,6 @@ public class PageServiceImpl implements PageService {
                 .orElse(0L);
     }
 
-    @Transactional
     @Override
     public void saveAll(Set<PageDto> fetchedPages) {
         if (CollectionUtils.isEmpty(fetchedPages)) {
@@ -47,8 +45,8 @@ public class PageServiceImpl implements PageService {
     }
 
     @Override
-    @Transactional
     public void deleteAll() {
+        log.debug("Удаление всех сохраненных страниц");
         pageRepository.deleteAll();
     }
 }

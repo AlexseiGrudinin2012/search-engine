@@ -1,8 +1,5 @@
 package ru.learning.searchengine.infrastructure.multithreads.impl;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import ru.learning.searchengine.infrastructure.multithreads.ForkJoinPoolWrapper;
 import ru.learning.searchengine.infrastructure.multithreads.MultithreadTaskExecutor;
@@ -15,9 +12,7 @@ import java.util.concurrent.ForkJoinTask;
 
 @Component
 public class MultithreadTaskExecutorImpl<RETURN_VALUE> implements MultithreadTaskExecutor<RETURN_VALUE> {
-    @Value("${app.multithread.executor.threads.max.count}")
-    private String threadsCount;
-    private final int defaultCoreCount = Runtime.getRuntime().availableProcessors() - 1;
+    private final int DEFAULT_CORE_COUNT = Runtime.getRuntime().availableProcessors() - 1;
     private final List<ForkJoinPoolWrapper<RETURN_VALUE>> pools = new ArrayList<>();
     private ExecutorService executor;
 
@@ -26,7 +21,7 @@ public class MultithreadTaskExecutorImpl<RETURN_VALUE> implements MultithreadTas
     }
 
     private ExecutorService createExecutor() {
-        return Executors.newFixedThreadPool(NumberUtils.toInt(StringUtils.trim(threadsCount), defaultCoreCount));
+        return Executors.newFixedThreadPool(DEFAULT_CORE_COUNT);
     }
 
     @Override
@@ -37,10 +32,18 @@ public class MultithreadTaskExecutorImpl<RETURN_VALUE> implements MultithreadTas
         executor.submit(() -> runTaskWithNewPoolWrapper(action));
     }
 
+    @Override
     public void shutdownAll() {
         executor.shutdownNow();
         pools.forEach(ForkJoinPoolWrapper::close);
         pools.clear();
+    }
+
+    @Override
+    public boolean isPoolSizeEmpty() {
+        synchronized (pools) {
+            return pools.isEmpty();
+        }
     }
 
     private void runTaskWithNewPoolWrapper(ForkJoinTask<RETURN_VALUE> action) {

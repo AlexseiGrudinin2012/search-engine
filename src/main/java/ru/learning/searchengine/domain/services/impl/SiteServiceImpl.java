@@ -2,7 +2,6 @@ package ru.learning.searchengine.domain.services.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import ru.learning.searchengine.domain.dto.SiteDto;
 import ru.learning.searchengine.domain.enums.SiteStatus;
 import ru.learning.searchengine.domain.services.SiteService;
@@ -27,9 +26,7 @@ public class SiteServiceImpl implements SiteService {
                 .toList();
     }
 
-
-    @Transactional
-    public synchronized void save(SiteDto fetchedSite) {
+    public void save(SiteDto fetchedSite) {
         Optional<SiteEntity> persistedSite = siteRepository.findById(fetchedSite.getId());
         siteRepository.save(
                 persistedSite.isEmpty()
