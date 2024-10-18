@@ -42,4 +42,13 @@ public class SiteServiceImpl implements SiteService {
     public boolean isAllSitesIndexed() {
         return !siteRepository.existsAllByStatusIn(SiteStatus.getNonIndexedStatuses());
     }
+
+    @Override
+    public Optional<SiteDto> findSiteById(Long siteId) {
+        return Optional.ofNullable(siteId)
+                .map(siteRepository::findById)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .map(SiteMapper.INSTANCE::entityToDto);
+    }
 }

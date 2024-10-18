@@ -1,4 +1,4 @@
-package ru.learning.searchengine.infrastructure.multithreads.impl.tasks;
+package ru.learning.searchengine.domain.services.impl.indexing.tasks;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -6,10 +6,11 @@ import org.jsoup.Connection;
 import org.springframework.util.CollectionUtils;
 import ru.learning.searchengine.domain.dto.PageDto;
 import ru.learning.searchengine.domain.dto.SiteDto;
+import ru.learning.searchengine.domain.enums.SiteStatus;
+import ru.learning.searchengine.domain.services.impl.indexing.helpers.IndexingSiteHelper;
+import ru.learning.searchengine.domain.services.impl.indexing.model.IndexingResultDto;
 
 import java.io.IOException;
-import java.net.ConnectException;
-import java.net.SocketTimeoutException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -17,33 +18,40 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveAction;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @Slf4j
-public class RecursiveWebAnalyzerTask extends RecursiveAction {
-
-    //Для обеспечения уникальности ссылки
-    private final Set<String> linkStorage;
-    private final String currentLink;
-    private final SiteDto siteDto;
-
-    //Ну, думаю тут static не помешает ...конфиг и прочее не будет меняться динамически без перезапуска
-    private static final String RESPONSE_CONTENT_TYPE = "text/html";
-    private static final String SOCKET_TIMEOUT_MESSAGE = "Не удалось дождаться ответа от страницы \"%s\"";
+final public class RecursiveWebAnalyzerTask extends RecursiveAction {
     private static Connection connection;
 
+    private final String currentLink;
+    //Метод извлечения промежуточных данных
+    private static Consumer<IndexingResultDto> runIntermediateAction;
+    //Метод проверки запущена ли индексация всех страниц
+    private static Supplier<Boolean> webAnalyzerRunningCheck;
+    private final SiteDto rootSiteDto;
+    private final Set<String> linkStorage;
 
-    //Для создания из-вне
-    public RecursiveWebAnalyzerTask(SiteDto siteDto, Connection connection) {
-        this(siteDto, null, ConcurrentHashMap.newKeySet());
+    private static final String RESPONSE_CONTENT_TYPE = "text/html";
+
+    public RecursiveWebAnalyzerTask(
+            SiteDto rootSiteDto,
+            Connection connection,
+            Consumer<IndexingResultDto> runIntermediateAction,
+            Supplier<Boolean> webAnalyzerRunningCheck
+    ) {
+        this(rootSiteDto, null, ConcurrentHashMap.newKeySet());
         RecursiveWebAnalyzerTask.connection = connection;
+        RecursiveWebAnalyzerTask.runIntermediateAction = runIntermediateAction;
+        RecursiveWebAnalyzerTask.webAnalyzerRunningCheck = webAnalyzerRunningCheck;
     }
 
-    //Для рекурсии
-    private RecursiveWebAnalyzerTask(SiteDto siteDto,
+    private RecursiveWebAnalyzerTask(SiteDto rootSiteDto,
                                      String currentLink,
                                      Set<String> linkStorage) {
-        this.siteDto = siteDto;
+        this.rootSiteDto = rootSiteDto;
         this.currentLink = currentLink;
         this.linkStorage = linkStorage;
     }
@@ -51,9 +59,16 @@ public class RecursiveWebAnalyzerTask extends RecursiveAction {
     @Override
     public void compute() {
         try {
+            if (!webAnalyzerRunningCheck.get()) {
+                IndexingSiteHelper.getInstance().updateSiteInfo(rootSiteDto, SiteStatus.FAILED, false);
+                return;
+            }
+
             String currentLink = StringUtils.isEmpty(this.currentLink)
-                    ? siteDto.getUrl()
+                    ? rootSiteDto.getUrl()
                     : this.currentLink;
+
+            IndexingSiteHelper.getInstance().updateSiteInfo(rootSiteDto, SiteStatus.INDEXING);
 
             Set<PageDto> children = getChildren(currentLink);
             if (CollectionUtils.isEmpty(children)) {
@@ -65,45 +80,53 @@ public class RecursiveWebAnalyzerTask extends RecursiveAction {
                     .map(PageDto::getPath)
                     .map(this::forkNewTask)
                     .toList();
-
             newTasks.forEach(ForkJoinTask::join);
+
+            if (newTasks.stream().allMatch(ForkJoinTask::isDone) && webAnalyzerRunningCheck.get()) {
+                IndexingSiteHelper.getInstance().updateSiteInfo(rootSiteDto, SiteStatus.INDEXED);
+                accept(children);
+            }
         } catch (CancellationException e) {
             log.atInfo()
                     .setCause(e)
                     .log("Задача была отменена автоматически");
-        } catch (SocketTimeoutException | ConnectException e) {
-            log.atWarn()
-                    .setCause(e)
-                    .addKeyValue("@site", siteDto)
-                    .addKeyValue("currentLink", currentLink)
-                    .log("Не удалось дождаться ответа от страницы");
+            IndexingSiteHelper.getInstance().updateSiteInfo(rootSiteDto, SiteStatus.FAILED);
         } catch (Exception e) {
-            //Останавливаем индексацию в случае ошибки, проставляем статус и время
             log.atError()
                     .setCause(e)
                     .addKeyValue("currentLink", currentLink)
                     .log("Неизвестная ошибка во время парсинга страницы");
+            IndexingSiteHelper.getInstance().updateSiteInfo(rootSiteDto, SiteStatus.FAILED, e);
+        } finally {
+            //Для получения последних данных независимо от состояния метода - выполним необходимое
+            accept(Collections.emptySet());
         }
+    }
+
+    private void accept(Set<PageDto> pages) {
+        runIntermediateAction.accept(IndexingSiteHelper.getInstance().buildResult(pages, rootSiteDto));
     }
 
     private RecursiveWebAnalyzerTask forkNewTask(String newLink) {
         //Поспим и работать!
         sleep();
-        RecursiveWebAnalyzerTask recursiveWebAnalyzerTask =
-                new RecursiveWebAnalyzerTask(siteDto, newLink, linkStorage);
+        RecursiveWebAnalyzerTask recursiveWebAnalyzerTask = new RecursiveWebAnalyzerTask(
+                rootSiteDto,
+                newLink,
+                linkStorage
+        );
         recursiveWebAnalyzerTask.fork();
         return recursiveWebAnalyzerTask;
     }
 
-    //Даже у него была девушка ...
     public Set<PageDto> getChildren(final String link) throws IOException {
-        Connection.Response response = RecursiveWebAnalyzerTask.connection
+        Connection.Response response = connection
                 .newRequest()
                 .url(link)
                 .execute();
         return response == null || !this.isValidContentType(response.contentType())
                 ? Collections.emptySet()
-                : this.parsePages(response);
+                : parsePages(response);
     }
 
     private Set<PageDto> parsePages(Connection.Response response) throws IOException {
@@ -118,17 +141,18 @@ public class RecursiveWebAnalyzerTask extends RecursiveAction {
                 .map(path -> PageDto
                         .builder()
                         .code(httpCode)
-                        .site(siteDto)
+                        .site(rootSiteDto)
                         .content(content)
                         .path(path)
                         .build())
                 .collect(Collectors.toSet());
     }
 
+
     private boolean isLinkValid(final String link) {
         String trimLink = StringUtils.trim(link);
         return StringUtils.isNotEmpty(trimLink)
-                && trimLink.contains(siteDto.getUrl())
+                && trimLink.contains(rootSiteDto.getUrl())
                 && !trimLink.contains("#")
                 && trimLink.endsWith("/");
     }

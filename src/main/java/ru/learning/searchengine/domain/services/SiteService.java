@@ -1,9 +1,9 @@
 package ru.learning.searchengine.domain.services;
 
 import ru.learning.searchengine.domain.dto.SiteDto;
-import ru.learning.searchengine.domain.enums.SiteStatus;
 
 import java.util.List;
+import java.util.Optional;
 
 
 public interface SiteService {
@@ -12,4 +12,6 @@ public interface SiteService {
     void save(SiteDto siteDto);
 
     boolean isAllSitesIndexed();
+
+    Optional<SiteDto> findSiteById(Long siteId);
 }
