@@ -1615,12 +1615,12 @@ var API = function(){
                         var time = new Date(site.statusTime);
                         $blockSiteExample.find('.Statistics-description')
                             .html('<div class="Statistics-option"><strong>Status time:</strong> ' +
-                                time.getDate() + '.' +
-                                (time.getMonth() + 1) + '.' +
+                                pad(time.getDate()) + '.' +
+                                pad((time.getMonth() + 1)) + '.' +
                                 time.getFullYear() + ' ' +
-                                time.getHours() + ':' +
-                                time.getMinutes() + ':' +
-                                time.getSeconds() +
+                                pad(time.getHours()) + ':' +
+                                pad(time.getMinutes()) + ':' +
+                                pad(time.getSeconds()) +
                                 '</div><div class="Statistics-option"><strong>Pages:</strong> ' + site.pages +
                                 '</div><div class="Statistics-option"><strong>Lemmas:</strong> ' + site.lemmas +
                                 '</div>' +
@@ -1674,7 +1674,12 @@ var API = function(){
             }
         }
     };
-    function shiftCheck($element, wave){
+
+    function pad(number) {
+        return (number < 10 ? '0' : '') + number;
+    }
+
+    function shiftCheck($element, wave) {
         var text = '',
             check = $element.data('check');
         text = $element.find('.btn-content').text();
@@ -1682,7 +1687,7 @@ var API = function(){
             $element.find('.btn-content').text($element.data('alttext'));
             $element.data('alttext', text);
         }
-        if ($element.data('send') == 'startIndexing' || $element.data('send') == 'stopIndexing'){
+        if ($element.data('send') == 'startIndexing' || $element.data('send') == 'stopIndexing') {
             if (check) {
                 $('.UpdatePageBlock').show(0)
             } else {

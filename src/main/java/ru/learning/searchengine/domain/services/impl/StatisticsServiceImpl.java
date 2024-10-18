@@ -16,8 +16,10 @@ import ru.learning.searchengine.infrastructure.exceptions.SiteNotFoundException;
 import ru.learning.searchengine.infrastructure.mappers.StatisticsMapper;
 import ru.learning.searchengine.presentation.models.statistics.StatisticsResponseModel;
 
+import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -39,19 +41,24 @@ public class StatisticsServiceImpl implements StatisticsService {
         List<DetailedStatisticsItemDto> detailed =
                 siteDtos.stream()
                         .map(this::getDetailedStatisticsItem)
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
                         .sorted(Comparator.comparing(DetailedStatisticsItemDto::getName))
                         .toList();
 
-        return StatisticsMapper.INSTANCE.dtoToModel(StatisticsDto.builder()
-                .statistics(this.getStatisticsDataDto(detailed))
-                .result(true)
-                .build());
+        return StatisticsMapper.INSTANCE.dtoToModel(
+                StatisticsDto
+                        .builder()
+                        .statistics(getStatisticsDataDto(detailed))
+                        .result(true)
+                        .build()
+        );
     }
 
     private StatisticsDataDto getStatisticsDataDto(List<DetailedStatisticsItemDto> detailedStatisticsItemDtos) {
         return StatisticsDataDto
                 .builder()
-                .total(this.getTotalStatisticsDto(detailedStatisticsItemDtos))
+                .total(getTotalStatisticsDto(detailedStatisticsItemDtos))
                 .detailed(detailedStatisticsItemDtos)
                 .build();
     }
@@ -66,16 +73,19 @@ public class StatisticsServiceImpl implements StatisticsService {
                 .build();
     }
 
-    private DetailedStatisticsItemDto getDetailedStatisticsItem(SiteDto siteDto) {
-        return DetailedStatisticsItemDto
-                .builder()
-                .name(siteDto.getName())
-                .url(siteDto.getUrl())
-                .status(siteDto.getStatus())
-                .pages(pageService.getPagesCount(siteDto))
-                .lemmas(lemmaService.getLemmaCount(siteDto))
-                .error(siteDto.getLastError())
-                .statusTime(System.currentTimeMillis())
-                .build();
+    private Optional<DetailedStatisticsItemDto> getDetailedStatisticsItem(SiteDto siteDto) {
+        return Optional.ofNullable(siteDto)
+                .map(s ->
+                        DetailedStatisticsItemDto
+                                .builder()
+                                .name(s.getName())
+                                .url(s.getUrl())
+                                .status(s.getStatus())
+                                .pages(pageService.getPagesCount(s))
+                                .lemmas(lemmaService.getLemmaCount(s))
+                                .error(s.getLastError())
+                                .statusTime(s.getStatusTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli())
+                                .build()
+                );
     }
 }
