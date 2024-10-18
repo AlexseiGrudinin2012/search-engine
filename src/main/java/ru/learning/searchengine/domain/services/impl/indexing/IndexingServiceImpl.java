@@ -39,6 +39,7 @@ public class IndexingServiceImpl implements IndexingService {
             return buildResponseModel(INDEXATION_STARTED_MESSAGE, false);
         }
         List<SiteDto> siteDtos = siteService.getAllSites()
+                //TODO Убрать фильтр
                 .stream()
                 .filter(s -> s.getId().equals(4L))
                 .toList();
