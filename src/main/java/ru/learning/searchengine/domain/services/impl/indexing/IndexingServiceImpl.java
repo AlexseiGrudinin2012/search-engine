@@ -20,20 +20,20 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class IndexingServiceImpl implements IndexingService {
-    private final static String INDEXATION_STARTED_MESSAGE = "Индексация уже запущена!";
-    private final static String EMPTY_SITE_LIST_MESSAGE = "Отсутствуют сайты для выполнения индексации";
+    private final static String INDEXING_STARTED_ERROR_MESSAGE = "Индексация уже запущена!";
+    private final static String EMPTY_SITE_LIST_ERROR_MESSAGE = "Отсутствуют сайты для выполнения индексации";
     private final SiteService siteService;
     private final PageService pageService;
-    private volatile boolean isIndexationStarted = false;
+    private volatile boolean isIndexingStarted = false;
     private final JsoupConfig jsoupConfig;
     private final MultithreadTaskExecutor<Void> multithreadTaskExecutor;
 
     @Override
-    public StatusResponseModel startIndexation() {
-        updateIndexationState(!multithreadTaskExecutor.isPoolSizeEmpty());
-        if (isIndexationStarted) {
-            log.warn(INDEXATION_STARTED_MESSAGE);
-            return buildResponseModel(INDEXATION_STARTED_MESSAGE, false);
+    public StatusResponseModel start() {
+        updateIndexingState(!multithreadTaskExecutor.isPoolSizeEmpty());
+        if (isIndexingStarted) {
+            log.warn(INDEXING_STARTED_ERROR_MESSAGE);
+            return buildResponseModel(INDEXING_STARTED_ERROR_MESSAGE, false);
         }
         List<SiteDto> siteDtos = siteService.getAllSites()
                 //TODO Убрать фильтр
@@ -41,15 +41,15 @@ public class IndexingServiceImpl implements IndexingService {
                 .filter(s -> s.getId().equals(4L))
                 .toList();
         if (CollectionUtils.isEmpty(siteDtos)) {
-            log.warn(EMPTY_SITE_LIST_MESSAGE);
-            return buildResponseModel(EMPTY_SITE_LIST_MESSAGE, false);
+            log.warn(EMPTY_SITE_LIST_ERROR_MESSAGE);
+            return buildResponseModel(EMPTY_SITE_LIST_ERROR_MESSAGE, false);
         }
 
-        updateIndexationState(true);
+        updateIndexingState(true);
         pageService.deleteAll();
         List<RecursiveWebAnalyzerTask> tasks = siteDtos
                 .stream()
-                .map(this::getNewIndexationTask)
+                .map(this::getNewIndexingTask)
                 .toList();
         tasks.forEach(multithreadTaskExecutor::run);
         log.info("Индексация запущена");
@@ -57,28 +57,28 @@ public class IndexingServiceImpl implements IndexingService {
     }
 
     @Override
-    public StatusResponseModel stopIndexation() {
-        updateIndexationState(false);
+    public StatusResponseModel stop() {
+        updateIndexingState(false);
         multithreadTaskExecutor.shutdownAll();
         log.info("Индексация остановлена");
         return buildResponseModel(null, true);
     }
 
-    private boolean isIndexationStarted() {
-        return isIndexationStarted;
+    private boolean isIndexingStarted() {
+        return isIndexingStarted;
     }
 
-    private RecursiveWebAnalyzerTask getNewIndexationTask(SiteDto siteDto) {
+    private RecursiveWebAnalyzerTask getNewIndexingTask(SiteDto siteDto) {
         return new RecursiveWebAnalyzerTask(
                 siteDto,
                 jsoupConfig.getConnection(),
                 this::saveResult,
-                this::isIndexationStarted
+                this::isIndexingStarted
         );
     }
 
-    private void updateIndexationState(boolean isIndexationStarted) {
-        this.isIndexationStarted = isIndexationStarted;
+    private void updateIndexingState(boolean isIndexingStarted) {
+        this.isIndexingStarted = isIndexingStarted;
     }
 
     private void saveResult(IndexingResultDto indexingResultDto) {

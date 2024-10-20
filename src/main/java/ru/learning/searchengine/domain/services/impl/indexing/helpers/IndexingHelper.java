@@ -11,21 +11,21 @@ import java.util.Set;
 import java.util.concurrent.CancellationException;
 
 @Slf4j
-public class IndexingSiteHelper {
+public class IndexingHelper {
     private static final String STOP_TASK_MESSAGE = "Индексация остановлена пользователем";
-    private static final IndexingSiteHelper INSTANCE = new IndexingSiteHelper();
+    private static final IndexingHelper INSTANCE = new IndexingHelper();
 
-    private IndexingSiteHelper() {
+    private IndexingHelper() {
     }
 
-    public static IndexingSiteHelper getInstance() {
+    public static IndexingHelper getInstance() {
         return INSTANCE;
     }
 
     public void updateSiteInfo(SiteDto siteDto,
                                SiteStatus siteStatus,
-                               boolean isIndexationStarted) {
-        updateSiteInfo(siteDto, siteStatus, isIndexationStarted, null);
+                               boolean isIndexingStarted) {
+        updateSiteInfo(siteDto, siteStatus, isIndexingStarted, null);
     }
 
     public void updateSiteInfo(SiteDto siteDto,
@@ -40,7 +40,7 @@ public class IndexingSiteHelper {
 
     public void updateSiteInfo(SiteDto siteDto,
                                SiteStatus siteStatus,
-                               boolean isIndexationStarted,
+                               boolean isIndexingStarted,
                                Throwable throwable
     ) {
         siteDto.setStatus(siteStatus);
@@ -52,7 +52,7 @@ public class IndexingSiteHelper {
         }
 
         //Если пользователь остановил индексацию, то говорим об этом
-        if (!isIndexationStarted) {
+        if (!isIndexingStarted) {
             siteDto.setLastError(STOP_TASK_MESSAGE);
             return;
         }
@@ -66,7 +66,7 @@ public class IndexingSiteHelper {
         }
     }
 
-    public IndexingResultDto buildResult(Set<PageDto> pages, SiteDto site) {
+    public IndexingResultDto buildImmediateResult(Set<PageDto> pages, SiteDto site) {
         return IndexingResultDto
                 .builder()
                 .pages(pages)

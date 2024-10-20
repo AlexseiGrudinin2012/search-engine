@@ -7,7 +7,7 @@ import org.springframework.util.CollectionUtils;
 import ru.learning.searchengine.domain.dto.PageDto;
 import ru.learning.searchengine.domain.dto.SiteDto;
 import ru.learning.searchengine.domain.enums.SiteStatus;
-import ru.learning.searchengine.domain.services.impl.indexing.helpers.IndexingSiteHelper;
+import ru.learning.searchengine.domain.services.impl.indexing.helpers.IndexingHelper;
 import ru.learning.searchengine.domain.services.impl.indexing.model.IndexingResultDto;
 
 import java.io.IOException;
@@ -29,7 +29,7 @@ final public class RecursiveWebAnalyzerTask extends RecursiveAction {
     private final String currentLink;
     //Метод извлечения промежуточных данных
     private static Consumer<IndexingResultDto> runIntermediateAction;
-    //Метод проверки запущена ли индексация всех страниц
+    //Метод проверки флага запуска
     private static Supplier<Boolean> webAnalyzerRunningCheck;
     private final SiteDto rootSiteDto;
     private final Set<String> linkStorage;
@@ -60,7 +60,7 @@ final public class RecursiveWebAnalyzerTask extends RecursiveAction {
     public void compute() {
         try {
             if (!webAnalyzerRunningCheck.get()) {
-                IndexingSiteHelper.getInstance().updateSiteInfo(rootSiteDto, SiteStatus.FAILED, false);
+                IndexingHelper.getInstance().updateSiteInfo(rootSiteDto, SiteStatus.FAILED, false);
                 return;
             }
 
@@ -68,7 +68,7 @@ final public class RecursiveWebAnalyzerTask extends RecursiveAction {
                     ? rootSiteDto.getUrl()
                     : this.currentLink;
 
-            IndexingSiteHelper.getInstance().updateSiteInfo(rootSiteDto, SiteStatus.INDEXING);
+            IndexingHelper.getInstance().updateSiteInfo(rootSiteDto, SiteStatus.INDEXING);
 
             Set<PageDto> children = getChildren(currentLink);
             if (CollectionUtils.isEmpty(children)) {
@@ -83,20 +83,20 @@ final public class RecursiveWebAnalyzerTask extends RecursiveAction {
             newTasks.forEach(ForkJoinTask::join);
 
             if (newTasks.stream().allMatch(ForkJoinTask::isDone) && webAnalyzerRunningCheck.get()) {
-                IndexingSiteHelper.getInstance().updateSiteInfo(rootSiteDto, SiteStatus.INDEXED);
+                IndexingHelper.getInstance().updateSiteInfo(rootSiteDto, SiteStatus.INDEXED);
                 accept(children);
             }
         } catch (CancellationException e) {
             log.atInfo()
                     .setCause(e)
                     .log("Задача была отменена автоматически");
-            IndexingSiteHelper.getInstance().updateSiteInfo(rootSiteDto, SiteStatus.FAILED, e);
+            IndexingHelper.getInstance().updateSiteInfo(rootSiteDto, SiteStatus.FAILED, e);
         } catch (Exception e) {
             log.atError()
                     .setCause(e)
                     .addKeyValue("currentLink", currentLink)
                     .log("Неизвестная ошибка во время парсинга страницы");
-            IndexingSiteHelper.getInstance().updateSiteInfo(rootSiteDto, SiteStatus.FAILED, e);
+            IndexingHelper.getInstance().updateSiteInfo(rootSiteDto, SiteStatus.FAILED, e);
         } finally {
             //Для получения последних данных независимо от состояния метода - выполним необходимое
             accept(Collections.emptySet());
@@ -104,7 +104,7 @@ final public class RecursiveWebAnalyzerTask extends RecursiveAction {
     }
 
     private void accept(Set<PageDto> pages) {
-        runIntermediateAction.accept(IndexingSiteHelper.getInstance().buildResult(pages, rootSiteDto));
+        runIntermediateAction.accept(IndexingHelper.getInstance().buildImmediateResult(pages, rootSiteDto));
     }
 
     private RecursiveWebAnalyzerTask forkNewTask(String newLink) {

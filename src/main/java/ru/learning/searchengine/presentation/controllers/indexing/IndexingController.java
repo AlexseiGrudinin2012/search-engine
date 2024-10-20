@@ -1,4 +1,4 @@
-package ru.learning.searchengine.presentation.controllers.indexations;
+package ru.learning.searchengine.presentation.controllers.indexing;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -11,19 +11,19 @@ import ru.learning.searchengine.presentation.models.StatusResponseModel;
 @RestController()
 @RequestMapping("/api")
 @RequiredArgsConstructor
-public class IndexationsController {
+public class IndexingController {
     private final IndexingService indexingService;
 
     @GetMapping("/startIndexing")
-    public ResponseEntity<StatusResponseModel> startIndexation() {
-        StatusResponseModel statusResponseModel = indexingService.startIndexation();
+    public ResponseEntity<StatusResponseModel> startIndexing() {
+        StatusResponseModel statusResponseModel = indexingService.start();
         return statusResponseModel.isResult()
                 ? ResponseEntity.ok(statusResponseModel)
                 : ResponseEntity.badRequest().body(statusResponseModel);
     }
 
     @GetMapping("/stopIndexing")
-    public ResponseEntity<StatusResponseModel> stopIndexation() {
-        return ResponseEntity.ok(indexingService.stopIndexation());
+    public ResponseEntity<StatusResponseModel> stopIndexing() {
+        return ResponseEntity.ok(indexingService.stop());
     }
 }
